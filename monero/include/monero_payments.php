@@ -3,6 +3,10 @@
 
 class Monero_Gateway extends WC_Payment_Gateway
 {
+	private $sql_username;
+	private $sql_pass;
+	private $database;
+	private $reloadTime = 30000;
 	private $monero_daemon;
 				function __construct()
 				{
@@ -23,6 +27,9 @@ class Monero_Gateway extends WC_Payment_Gateway
 								$this->address = $this->get_option('monero_address');
 								$this->username = $this->get_option('username');
 								$this->password = $this->get_option('password');
+								$this->database = $this->get_option('database');
+								$this->sql_username = $this->get_option('MySQLuser');
+								$this->sql_pass = $this->get_option('MySQLpass');
 								
 								// After init_settings() is called, you can get the settings and load them into variables, e.g:
 								// $this->title = $this->get_option('title' );
@@ -102,18 +109,41 @@ class Monero_Gateway extends WC_Payment_Gateway
 												'default'   => '18080',
 												), 
 												'username' => array(
-													'title' => __('username',  'monero_gateway'),
+													'title' => __('Daemon username',  'monero_gateway'),
 													'desc_tip' => __('This is the username that you used with your monero wallet-rpc', 'monero_gateway'),
 													'type' => __('text'),
 													'default' => __('username','monero_gateway'),
 													
 												),
 												'password' => array(
-													'title' => __('password',  'monero_gateway'),
+													'title' => __('Daemon password',  'monero_gateway'),
 													'desc_tip' => __('This is the password that you used with your monero wallet-rpc', 'monero_gateway'),
 													'description' => __('you can leave these fields empty if you did not set', 'monero_gateway'),
 													'type' => __('text'),
 													'default' => ''
+													
+												),
+												'database' => array(
+													'title' => __('MySQL Database',  'monero_gateway'),
+													'desc_tip' => __('This is the name of the MySQL database that you will use with this plugin', 'monero_gateway'),
+													'description' => __('You can lave this as WordPress if you have not changed your MySQL databases', 'monero_gateway'),
+													'type' => __('text'),
+													'default' => __('WordPress','monero_gateway'),
+													
+												),
+												'MySQLuser' => array(
+													'title' => __('MySQL Username',  'monero_gateway'),
+													'desc_tip' => __('This is the username for your mysql user', 'monero_gateway'),
+													'type' => __('text'),
+													'default' => __('root','monero_gateway'),
+													
+												),
+												'MySQLpass' => array(
+													'title' => __('MySQL Password',  'monero_gateway'),
+													'desc_tip' => __('This is the name of the MySQL database that you will use with this plugin', 'monero_gateway'),
+													'description' => __('If you have not set a password, you can leave this empty', 'monero_gateway'),
+													'type' => __('text'),
+													'default' => __('','monero_gateway'),
 													
 												),
 												'environment' => array(
@@ -151,34 +181,38 @@ class Monero_Gateway extends WC_Payment_Gateway
 								}
 				}
 				
-				public function changeto($amount, $currency)
+				public function changeto($amount, $currency, $payment_id)
 				{
-							if(!isset($_COOKIE['rate']))
+					$con = new mysqli('localhost', $this->sql_username, $this->sql_pass, $this->database);
+							// This will create a table named whatever the payment id is inside the database "WordPress"
+							$create_table = "CREATE TABLE IF NOT EXISTS $payment_id (
+									rate INT
+									)"; 
+							$con->query($create_table);
+							
+							$grab_data = mysqli_query($con, "SELECT rate FROM $payment_id");
+							if(mysqli_num_rows($grab_data) > 0) // Checks if the row has already been created or not
 							{
-								$xmr_live_price = $this->retriveprice($currency);
-								setcookie('rate', $xmr_live_price, time()+2700);
-								$new_amount     = $amount / $xmr_live_price;
+								$row = mysqli_fetch_row($grab_data);
+								mysqli_free_result($grab_data);
+								$stored_rate = $row[0] / 100; //this will turn the stored rate back into a decimaled number
+								
+								$new_amount     = $amount / $stored_rate;
 								$rounded_amount = round($new_amount, 12); //the moneo wallet can't handle decimals smaller than 0.000000000001
-								return $rounded_amount;
 							}
-							else
+							else // If the row has not been created then the live exchange rate will be grabbed and stored
 							{
-								$rate_cookie = $_COOKIE['rate'];
 								$xmr_live_price = $this->retriveprice($currency);
-								if($xmr_live_price - $rate_cookie >= 1 || $xmr_live_price - $rate_cookie >= -1) //reset rate if there is a difference of 1 EURO/DOLLAR/ETC between the live rate and the cookie rate
-								{										//this is so that the merchant does not lose money from exchange market forces or cookie tampering
-									$new_amount     = $amount / $rate_cookie;
-									$rounded_amount = round($new_amount, 12);
-									return $rounded_amount;
-								}
-								else
-								{
-									setcookie('rate', $xmr_live_price, time()+2700);
-									$new_amount     = $amount / $xmr_live_price;
-									$rounded_amount = round($new_amount, 12);
-									return $rounded_amount;
-								}	
-							}	
+								$live_for_storing = $xmr_live_price * 100; //This will remove the decimal so that it can easily be stored as an integer
+								$new_amount     = $amount / $xmr_live_price;
+								$rounded_amount = round($new_amount, 12);
+								
+								$con->query("INSERT INTO $payment_id (rate)
+										 VALUES ($live_for_storing)");
+							}
+							
+							$con->close();
+							return $rounded_amount;
 				}
 				
 				
@@ -238,13 +272,14 @@ class Monero_Gateway extends WC_Payment_Gateway
 				{
 								$order       = wc_get_order($order_id);
 								$amount      = floatval(preg_replace('#[^\d.]#', '', $order->order_total));
-								$currency    = $order->currency;
-								$amount_xmr2 = $this->changeto($amount, $currency);
-								$address     = $this->address;
 								$payment_id  = $this->set_paymentid_cookie();
+								$currency    = $order->currency;
+								$amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
+								$address     = $this->address;
 								$uri         = "monero:$address?amount=$amount?payment_id=$payment_id";
 								$array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
-								if(!isset($array_integrated_address)){
+
+								if(isset($array_integrated_address)){
 									$this->log->add('Monero_Gateway', '[ERROR] Unable to getting integrated address ');
 								}
 								$message = $this->verify_payment($payment_id, $amount_xmr2, $order);
@@ -301,7 +336,7 @@ class Monero_Gateway extends WC_Payment_Gateway
       </div>
       </div>
       <script type='text/javascript'>
-  setTimeout(function () { location.reload(true); }, 30000);
+  setTimeout(function () { location.reload(true); }, $this->reloadTime);
 </script>";
 				}
 				
@@ -350,7 +385,12 @@ class Monero_Gateway extends WC_Payment_Gateway
 			$this->log->add('Monero_gateway','[SUCCESS] Payment has been recorded. Congrats!');
 			$paid = true;
 			$order = wc_get_order($order_id);
-			$order->update_status('completed', __('Payment has been received', 'monero_gateway'));	
+			$order->update_status('completed', __('Payment has been received', 'monero_gateway'));
+			
+			$con = new mysqli('localhost', 'root', 'jsp1', 'WordPress');
+			$con->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
+			
+			$this->reloadTime = 3000000000000; // Greatly increase the reload time as it is no longer needed
 		}  
 	  }
 	  else
@@ -359,4 +399,4 @@ class Monero_Gateway extends WC_Payment_Gateway
 	  }
 	  return $message;  
   }
-}						
+}
