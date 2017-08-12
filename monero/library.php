@@ -119,6 +119,12 @@ class Monero_Library
     {
 	    $args = array('body'    => $pRequest,
 			  'headers' => array('Content-type' => 'application/json')
+			  'method' => 'POST',
+	'timeout' => 45,
+	'redirection' => 5,
+	'httpversion' => '1.0',
+	'blocking' => true,
+	'cookie' => array()
     );
 	    $response = wp_remote_post($this->url, $args);
 	    return $response;
