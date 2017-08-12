@@ -118,7 +118,7 @@ class Monero_Library
     protected function & getResponse(&$pRequest)
     {
 	    $args = array('body'    => $pRequest,
-			  'headers' => array('Content-type' => 'application/json')
+			  'headers' => array('Content-type' => 'application/json'),
 			  'method' => 'POST',
 	'timeout' => 45,
 	'redirection' => 5,
