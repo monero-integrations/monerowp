@@ -38,6 +38,8 @@ class Monero_Gateway extends WC_Payment_Gateway
 				                add_action('admin_notices', array($this,'do_ssl_check'));
 								add_action('admin_notices', array($this,'validate_fields'));
 					            add_action('woocommerce_thankyou_' . $this->id, array($this,'instruction'));
+					//add_filter ('woocommerce_currencies', array($this,			'add_monero_currency'));
+	//add_filter ('woocommerce_currency_symbol', array($this,		'monero_symbol', 10, 2));
 								if (is_admin()) {
 												/* Save Settings */
 												add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options'
