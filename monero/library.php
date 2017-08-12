@@ -117,6 +117,12 @@ class Monero_Library
     }
     protected function & getResponse(&$pRequest)
     {
+	    $args = array('body'    => $pRequest,
+			  'headers' => array('Content-type' => 'application/json')
+    );
+	    $response = wp_remote_post($this->url, $args);
+	    return $response;
+	    /*
         // do the actual connection
         $ch = curl_init();
         if ( !$ch)
