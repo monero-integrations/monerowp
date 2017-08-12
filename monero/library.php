@@ -157,8 +157,8 @@ class Monero_Library
             throw new RuntimeException('Unable to connect to '.$this->url . ' Error: ' . curl_error($ch));
         }
         // close the connection
-        curl_close($ch);
-        return $response;
+        curl_close($ch); 
+        return $response; */
     }
     
     public function validate($pFailed, $pErrMsg)
