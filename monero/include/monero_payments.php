@@ -380,4 +380,21 @@ class Monero_Gateway extends WC_Payment_Gateway
 	  }
 	  return $message;  
   }
+	
+	public function monero_currency_symbol($currency_symbol, $currency)
+	{
+		switch( $currency )
+		{
+			case 'XMR':
+				$currency_symbol = 'XMR'; 
+				break;
+		}
+		return $currency_symbol;
+	}
+	
+	public function  add_xmr($currencies)
+	{
+	     $currencies['XMR'] = __( 'Monero', 'woocommerce' );
+	     return $currencies;
+	}
 }
