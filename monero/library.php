@@ -14,10 +14,7 @@ class Monero_Library
     protected $url = null, $is_debug = false, $parameters_structure = 'array';
     private $username;
     private $password; 
-    protected $curl_options = array(
-        CURLOPT_CONNECTTIMEOUT => 8,
-        CURLOPT_TIMEOUT => 8
-    );
+    
     
     
     private $httpErrors = array(
@@ -35,7 +32,7 @@ class Monero_Library
    
     public function __construct($pUrl, $pUser, $pPass)
     {
-        $this->validate(false === extension_loaded('curl'), 'The curl extension must be loaded for using this class!');
+   
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded for using this class!');
     
         $this->url = $pUrl;
