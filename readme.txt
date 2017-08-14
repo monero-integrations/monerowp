@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== Monero WooCommerce Extension ===
 Contributors: serhack
 Donate link: http://monerointegrations.com/donate.html
 Tags: monero, woocommerce, integration, payment, merchant, cryptocurrency, accept monero, monero woocommerce
@@ -36,3 +36,7 @@ Once you installed and activated WooCommerce, you may install and activate Moner
 
 1. Deactivate plugin through the 'Plugins' menu in WordPress
 2. Delete plugin through the 'Plugins' menu in WordPress
+
+== Screenshots == 
+1. Monero Payment Box
+2. Monero Options
