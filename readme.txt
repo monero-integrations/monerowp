@@ -40,3 +40,16 @@ Once you installed and activated WooCommerce, you may install and activate Moner
 == Screenshots == 
 1. Monero Payment Box
 2. Monero Options
+
+== Changelog ==
+
+= 0.1 =
+* First version ! Yay!
+
+== Upgrade Notice ==
+
+soon
+
+== Frequently Asked Questions ==
+
+soon
