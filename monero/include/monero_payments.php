@@ -9,7 +9,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 				{
 								$this->id                 = "monero_gateway";
 								$this->method_title       = __("Monero GateWay", 'monero_gateway');
-								$this->method_description = __("Monero Payment Gateway Plug-in for WooCommerce. You can find more information about this payment gateway in our website. WARN: You'll need a daemon online for your address.", 'monero_gateway');
+								$this->method_description = __("Monero Payment Gateway Plug-in for WooCommerce. You can find more information about this payment gateway in our website. You'll need a daemon online for your address.", 'monero_gateway');
 								$this->title              = __("Monero Gateway", 'monero_gateway');
 								$this->version		  = "0.2";
 								//
@@ -38,22 +38,44 @@ class Monero_Gateway extends WC_Payment_Gateway
 				                add_action('admin_notices', array($this,'do_ssl_check'));
 								add_action('admin_notices', array($this,'validate_fields'));
 					            add_action('woocommerce_thankyou_' . $this->id, array($this,'instruction'));
-					//add_filter ('woocommerce_currencies', array($this,			'add_monero_currency'));
-	//add_filter ('woocommerce_currency_symbol', array($this,		'monero_symbol', 10, 2));
 								if (is_admin()) {
 												/* Save Settings */
 												add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this,'process_admin_options'
 												));
+									
+add_filter( 'woocommerce_currencies', array($this,'add_my_currency') );
+add_filter('woocommerce_currency_symbol', 'add_my_currency_symbol', 10, 2);
+ add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 2);
+ 
+			
+												
+												
 								}
 					$this->monero_daemon = new Monero_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
 				}
 				
+				public function add_my_currency( $currencies ) {
+     $currencies['XMR'] = __('Monero','woocommerce');
+     return $currencies;
+}
+public function add_my_currency_symbol( $currency_symbol, $currency ) {
+     switch( $currency ) {
+          case 'XMR': $currency_symbol = 'XMR'; break;
+     }
+     return $currency_symbol;
+}
+				
+				
 				public function admin_options()
 				{
 								$this->log->add('Monero_gateway', '[SUCCESS] Monero Settings OK');
-								echo "<noscript><p><img src='http://monerointegrations.com/stats/piwik.php?idsite=2&rec=1' style='border:0;' alt='' /></p></noscript>";
+								
 								echo "<h1>Monero Payment Gateway</h1>";
+								
 								echo "<p>Welcome to Monero Extension for WooCommerce. Getting started: Make a connection with daemon <a href='https://reddit.com/u/serhack'>Contact Me</a>";
+								echo "<div style='border:1px solid #DDD;padding:5px 10px;font-weight:bold;color:#223079;background-color:#9ddff3;'>";
+								$this->getamountinfo();
+								echo "</div>";
 								echo "<table class='form-table'>";
 								$this->generate_settings_html();
 								echo "</table>";
@@ -120,9 +142,11 @@ class Monero_Gateway extends WC_Payment_Gateway
 												),
 												'discount' => array(
 													'title' => __('% discount for using XMR',  'monero_gateway'),
+													
 													'desc_tip' => __('Provide a descount to your customers for paying privatly with XMR!', 'monero_gateway'),
 													'description' => __(' Want to spread the word about Monero? Offer a little discount! Leave this empty if you do not wish to provide a discount',  'monero_gateway'),
 													'type' => __('text'),
+													'default' => '5%'
 													
 												),
 												'environment' => array(
@@ -157,6 +181,10 @@ class Monero_Gateway extends WC_Payment_Gateway
 								}
 								if ($currency == 'INR'){
 												return $price['INR'];
+								}
+								if($currency == 'XMR'){
+									$price = '1';
+												return $price;
 								}
 				}
 				
@@ -256,15 +284,21 @@ class Monero_Gateway extends WC_Payment_Gateway
 				public function instruction($order_id)
 				{
 								$order       = wc_get_order($order_id);
-								$amount      = floatval(preg_replace('#[^\d.]#', '', $order->order_total));
+								$amount      = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
 								$payment_id  = $this->set_paymentid_cookie();
-								$currency    = $order->currency;
+								$currency    = $order->get_currency();
 								$amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
 								$address     = $this->address;
+								if(isset($address)){
+								// If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
+								$address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
+								}
 								$uri         = "monero:$address?amount=$amount?payment_id=$payment_id";
 								$array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
 								if(!isset($array_integrated_address)){
-									$this->log->add('Monero_Gateway', '[ERROR] Unable to getting integrated address ');
+									$this->log->add('Monero_Gateway', '[ERROR] Unable to getting integrated address');
+									// Seems that we can't connect with daemon, then set array_integrated_address, little hack
+									$array_integrated_address["integrated_address"] = $address;
 								}
 								$message = $this->verify_payment($payment_id, $amount_xmr2, $order);
 								echo "<h4>".$message."</h4>";
@@ -277,48 +311,27 @@ class Monero_Gateway extends WC_Payment_Gateway
         			                         <div class='panel-body'>
 				                                <div class='row'>
 					                               <div class='col-sm-12 col-md-12 col-lg-12'>
-						                                  <h3><span class='text text-warning'><img src='https://pbs.twimg.com/profile_images/473825289630257152/PzHu2yli.png' width='32px' height='32px'></span> Monero Payment Box</h3>
+						                                  <h3> Monero Payment Box</h3>
 					                               </div>
 					                           <div class='col-sm-3 col-md-3 col-lg-3'>
-						                          <img src='https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=" . $uri . "' class='img-responsive'>
+						                          <img src='https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=" . $uri . "' class='img-responsive'>
 					                           </div>
 					                           <div class='col-sm-9 col-md-9 col-lg-9' style='padding:10px;'>
-						                          Send <b>" . $amount_xmr2 . " XMR</b> to<br/><input type='text'  class='form-control' value='" . $array_integrated_address["integrated_address"]."'>
+						                          Send <b>" . $amount_xmr2 . " XMR</b> to<br/><input type='text'  class='form-control' value='" . $array_integrated_address["integrated_address"]."' disabled>
                                                 or scan QR Code with your mobile device<br/><br/>
-                                                <small>If you don't know how to pay with monero, click instructions button. </small>
+                                                <small>If you don't know how to pay with monero or you don't know what monero is, please go <a href='#'>here</a>. </small>
 					                           </div>
 					                           <div class='col-sm-12 col-md-12 col-lg-12'>
 				
-						                      <input type='hidden' id='payment_boxID' value='de3a227fb470475'>
+						                      
 					                       </div>
 				                        </div>
 			                         </div>
-                                    <div class='panel-footer'>
-                                    <a  class='btn btn-info btn-lg' style='width: 100%; font-size: 14px; ' data-toggle='modal' data-target='#myModal'>Instructions</a>
-                                    </div>
+                                   
 		              </div>
                     </div>
                 </div>
         
-                    <div class='modal fade' id='myModal' role='dialog'>
-                        <div class='modal-dialog'>
-    
-                            <!-- Modal content-->
-                              <div class='modal-content'>
-                                <div class='modal-header'>
-                                    <h4 class='modal-title'>How to pay with Monero</h4>
-                                </div>
-                                <div class='modal-body container'>
-                                    <b>Paying with Monero</b>
-                                    <p>If you don't have Monero, you can buy it at a trusted exchange. If you already have some, please follow instructions</p>
-                                    <p>Scan the QR code into your monero app or copy and paste the address above into your Monero Wallet</p>
-                                 </div>
-                              <div class='modal-footer'>
-                            <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                              </div>
-      </div>
-      </div>
-      </div>
       <script type='text/javascript'>
   setTimeout(function () { location.reload(true); }, $this->reloadTime);
 </script>";
@@ -382,21 +395,15 @@ class Monero_Gateway extends WC_Payment_Gateway
 	  }
 	  return $message;  
   }
-	
-	public function monero_currency_symbol($currency_symbol, $currency)
-	{
-		switch( $currency )
-		{
-			case 'XMR':
-				$currency_symbol = 'XMR'; 
-				break;
-		}
-		return $currency_symbol;
-	}
-	
-	public function  add_xmr($currencies)
-	{
-	     $currencies['XMR'] = __( 'Monero', 'woocommerce' );
-	     return $currencies;
+	public function getamountinfo(){
+        	$wallet_amount = $this->monero_daemon->getbalance();
+        	$real_wallet_amount = $wallet_amount['balance'] / 1000000000000;
+        	$real_amount_rounded = round($real_wallet_amount, 6);
+        
+        	$unlocked_wallet_amount = $wallet_amount['unlocked_balance'] / 1000000000000;
+        	$unlocked_amount_rounded = round($unlocked_wallet_amount, 6);
+        
+		echo "Your balance is: ".$real_amount_rounded. " XMR </br>";
+		echo "Unlocked balance: ".$unlocked_amount_rounded." XMR </br>";
 	}
 }
