@@ -397,13 +397,14 @@ public function add_my_currency_symbol( $currency_symbol, $currency ) {
   }
 	public function getamountinfo(){
         	$wallet_amount = $this->monero_daemon->getbalance();
-		if(isset($wallet_amount)){
-			$this->log->add('Monero_gateway','[ERROR] Connection with daemon absent');
-		}
-        	$real_wallet_amount = $wallet_amount['balance'] / 1000000000000;
+        	$wallet_amount_unlocked = $this->monero_daemon->getbalance_unlocked();
+			if(!isset($wallet_amount)){
+				$this->log->add('Monero_gateway','[ERROR] Connection with daemon absent');
+			}
+        	$real_wallet_amount = $wallet_amount / 1000000000000;
         	$real_amount_rounded = round($real_wallet_amount, 6);
         
-        	$unlocked_wallet_amount = $wallet_amount['unlocked_balance'] / 1000000000000;
+        	$unlocked_wallet_amount = $wallet_amount_unlocked / 1000000000000;
         	$unlocked_amount_rounded = round($unlocked_wallet_amount, 6);
         
 		echo "Your balance is: ".$real_amount_rounded. " XMR </br>";
