@@ -14,7 +14,10 @@ class Monero_Library
     protected $url = null, $is_debug = false, $parameters_structure = 'array';
     private $username;
     private $password; 
-    
+    protected $curl_options = array(
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_TIMEOUT => 8
+    );
     
     
     private $httpErrors = array(
@@ -32,209 +35,38 @@ class Monero_Library
    
     public function __construct($pUrl, $pUser, $pPass)
     {
-   
-        $this->validate(false === extension_loaded('json'), 'The json extension must be loaded for using this class!');
-    
         $this->url = $pUrl;
-	$this->username = $pUser;
-	$this->password = $pPass;
-    }
-   
-    private function getHttpErrorMessage($pErrorNumber)
-    {
-        return isset($this->httpErrors[$pErrorNumber]) ? $this->httpErrors[$pErrorNumber] : null;
+		$this->username = $pUser;
+		$this->password = $pPass;
     }
     
-    public function setDebug($pIsDebug)
-    {
-        $this->is_debug = !empty($pIsDebug);
-        return $this;
-    }
-   
-  /*  public function setParametersStructure($pParametersStructure)
-    {
-        if (in_array($pParametersStructure, array('array', 'object')))
-        {
-            $this->parameters_structure = $pParametersStructure;
-        }
-        else
-        {
-            throw new UnexpectedValueException('Invalid parameters structure type.');
-        }
-        return $this;
-    } */
-   
-    public function setCurlOptions($pOptionsArray)
-    {
-        if (is_array($pOptionsArray))
-        {
-            $this->curl_options = $pOptionsArray + $this->curl_options;
-        }
-        else
-        {
-            throw new InvalidArgumentException('Invalid options type.');
-        }
-        return $this;
-    }
-    
-   private function request($pMethod, $pParams)
-    {
-        static $requestId = 0;
-        // generating uniuqe id per process
-        $requestId++;
-        // check if given params are correct
-        $this->validate(false === is_scalar($pMethod), 'Method name has no scalar value');
-       // $this->validate(false === is_array($pParams), 'Params must be given as array');
-        // send params as an object or an array
-        //$pParams = ($this->parameters_structure == 'object') ? $pParams[0] : array_values($pParams);
-        // Request (method invocation)
-        $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId));
-        // if is_debug mode is true then add url and request to is_debug
-        $this->debug('Url: ' . $this->url . "\r\n", false);
-        $this->debug('Request: ' . $request . "\r\n", false);
-        $responseMessage = $this->getResponse($request);
-        // if is_debug mode is true then add response to is_debug and display it
-        $this->debug('Response: ' . $responseMessage . "\r\n", true);
-        // decode and create array ( can be object, just set to false )
-        $responseDecoded = json_decode($responseMessage, true);
-        // check if decoding json generated any errors
-        $jsonErrorMsg = $this->getJsonLastErrorMsg();
-        $this->validate( !is_null($jsonErrorMsg), $jsonErrorMsg . ': ' . $responseMessage);
-        // check if response is correct
-        $this->validate(empty($responseDecoded['id']), 'Invalid response data structure: ' . $responseMessage);
-        $this->validate($responseDecoded['id'] != $requestId, 'Request id: ' . $requestId . ' is different from Response id: ' . $responseDecoded['id']);
-        if (isset($responseDecoded['error']))
-        {
-            $errorMessage = 'Request have return error: ' . $responseDecoded['error']['message'] . '; ' . "\n" .
-                'Request: ' . $request . '; ';
-            if (isset($responseDecoded['error']['data']))
-            {
-                $errorMessage .= "\n" . 'Error data: ' . $responseDecoded['error']['data'];
-            }
-            $this->validate( !is_null($responseDecoded['error']), $errorMessage);
-        }
-        return $responseDecoded['result'];
-    }
-    protected function & getResponse(&$pRequest)
-    {
-	    $args = array('body'    => $pRequest,
-			  'headers' => array('Content-type' => 'application/json'),
-			  'method' => 'POST',
-	'timeout' => 45,
-	'redirection' => 5,
-	'httpversion' => '1.0',
-	'blocking' => true,
-	'cookie' => array()
-    );
-	    $response = wp_remote_post($this->url, $args);
-	    return $response;
-	    /*
-        // do the actual connection
-        $ch = curl_init();
-        if ( !$ch)
-        {
-            throw new RuntimeException('Could\'t initialize a cURL session');
-        }
-        curl_setopt($ch, CURLOPT_URL, $this->url);
-	curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-	curl_setopt($ch, CURLOPT_USERPWD, $this->username . ":" . $this->password);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $pRequest);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-        curl_setopt($ch, CURLOPT_ENCODING, 'gzip,deflate');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        if ( !curl_setopt_array($ch, $this->curl_options))
-        {
-            throw new RuntimeException('Error while setting curl options');
-        }
-        // send the request
-        $response = curl_exec($ch);
-        // check http status code
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if (isset($this->httpErrors[$httpCode]))
-        {
-            throw new RuntimeException('Response Http Error - ' . $this->httpErrors[$httpCode]);
-        }
-        // check for curl error
-        if (0 < curl_errno($ch))
-        {
-            throw new RuntimeException('Unable to connect to '.$this->url . ' Error: ' . curl_error($ch));
-        }
-        // close the connection
-        curl_close($ch); 
-        return $response; */
-    }
-    
-    public function validate($pFailed, $pErrMsg)
-    {
-        if ($pFailed)
-        {
-            throw new RuntimeException($pErrMsg);
-        }
-    }
-    
-    protected function debug($pAdd, $pShow = false)
-    {
-        static $debug, $startTime;
-        // is_debug off return
-        if (false === $this->is_debug)
-        {
-            return;
-        }
-        // add
-        $debug .= $pAdd;
-        // get starttime
-        $startTime = empty($startTime) ? array_sum(explode(' ', microtime())) : $startTime;
-        if (true === $pShow and !empty($debug))
-        {
-            // get endtime
-            $endTime = array_sum(explode(' ', microtime()));
-            // performance summary
-            $debug .= 'Request time: ' . round($endTime - $startTime, 3) . ' s Memory usage: ' . round(memory_get_usage() / 1024) . " kb\r\n";
-            echo nl2br($debug);
-            // send output imidiately
-            flush();
-            // clean static
-            $debug = $startTime = null;
-        }
-    }
-    
-    function getJsonLastErrorMsg()
-    {
-        if (!function_exists('json_last_error_msg'))
-        {
-            function json_last_error_msg()
-            {
-                static $errors = array(
-                    JSON_ERROR_NONE           => 'No error',
-                    JSON_ERROR_DEPTH          => 'Maximum stack depth exceeded',
-                    JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
-                    JSON_ERROR_CTRL_CHAR      => 'Unexpected control character found',
-                    JSON_ERROR_SYNTAX         => 'Syntax error',
-                    JSON_ERROR_UTF8           => 'Malformed UTF-8 characters, possibly incorrectly encoded'
-                );
-                $error = json_last_error();
-                return array_key_exists($error, $errors) ? $errors[$error] : 'Unknown error (' . $error . ')';
-            }
-        }
-        
-        // Fix PHP 5.2 error caused by missing json_last_error function
-        if (function_exists('json_last_error'))
-        {
-            return json_last_error() ? json_last_error_msg() : null;
-        }
-        else
-        {
-            return null;
-        }
-    }
-    
-	public function _run($method,$params = null)
+    public function requestDaemon($method)
 	{
-      $result = $this->request($method, $params);
-       return $result; //the result is returned as an array
+		$request1 = json_encode(array('jsonrpc' => '2.0', 'id' => '0', 'method' => $method));
+		$response = wp_remote_post( 'http://' . $this->url, array(
+			'method' => 'POST',
+			'timeout' => 45,
+			'redirection' => 5,
+			'httpversion' => '1.1',
+			'blocking' => true,
+			'headers' => array('Content-type' => 'application/json'),
+			'body' => $request1
+			));
+
+		if ( is_wp_error( $response ) ) {
+		$error_message = $response->get_error_message();
+		return $error_message;
+		}
+		else {
+			return $response;
+		}
+	}
+    
+	public function _run($method)
+	{
+       $result = $this->requestDaemon($method);
+       $decode = json_decode($result['body'], true);
+       return $decode; //the result is returned as an array
     }
     
     //prints result as json
@@ -249,25 +81,30 @@ class Monero_Library
      * They will majority of them will return the result as an array
      * Example: $daemon->address(); where $daemon is an instance of this class, will return the wallet address as string within an array
      */
-    
     public function address()
     {
-        $address = $this->_run('getaddress');
+        $result = $this->_run('getaddress');
+        $address = $result['result']['address'];
         return $address;
     }
     
     public function getbalance()
     {
-         $balance = $this->_run('getbalance');
+         $result = $this->_run('getbalance');
+         $balance = $result['result']['balance'];
          return $balance;
     }
     
     public function getheight()
     {
-         $height = $this->_run('getheight');
+         $result = $this->_run('getheight');
+         $height = $result['result']['height'];
          return $height;
     }
     
+    // The functions that are commented out must be updated to use the WordPress HTTP API 
+    
+    /*
     public function incoming_transfer($type)
     {
         $incoming_parameters = array('transfer_type' => $type);
@@ -291,7 +128,7 @@ class Monero_Library
      
      /* A payment id can be passed as a string
         A random payment id will be generatd if one is not given */
-    public function make_integrated_address($payment_id)
+    /*public function make_integrated_address($payment_id)
     {
         $integrate_address_parameters = array('payment_id' => $payment_id);
         $integrate_address_method = $this->_run('make_integrated_address', $integrate_address_parameters);
@@ -348,5 +185,5 @@ class Monero_Library
       $get_bulk_payments_parameters = array('payment_id' => $payment_id, 'min_block_height' => $min_block_height);
       $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
       return $get_bulk_payments;
-	}
+	}*/
 } 
