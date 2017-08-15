@@ -95,6 +95,13 @@ class Monero_Library
          return $balance;
     }
     
+    public function getbalance_unlocked()
+    {
+         $result = $this->_run('getbalance');
+         $balance = $result['result']['unlocked_balance'];
+         return $balance;
+    }
+    
     public function getheight()
     {
          $result = $this->_run('getheight');
