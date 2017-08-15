@@ -43,7 +43,7 @@ class Monero_Library
     public function requestDaemon($method)
 	{
 		$request1 = json_encode(array('jsonrpc' => '2.0', 'id' => '0', 'method' => $method));
-		$response = wp_remote_post( 'http://127.0.0.1:2808/json_rpc', array(
+		$response = wp_remote_post( 'http://' . $this->url, array(
 			'method' => 'POST',
 			'timeout' => 45,
 			'redirection' => 5,
