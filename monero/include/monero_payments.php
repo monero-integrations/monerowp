@@ -289,16 +289,16 @@ public function add_my_currency_symbol( $currency_symbol, $currency ) {
 								$currency    = $order->get_currency();
 								$amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
 								$address     = $this->address;
-								if(isset($address)){
+								if(!isset($address)){
 								// If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
 								$address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
 								}
 								$uri         = "monero:$address?amount=$amount?payment_id=$payment_id";
-								$array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
-								if(!isset($array_integrated_address)){
+								$integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
+								if(!isset($integrated_address)){
 									$this->log->add('Monero_Gateway', '[ERROR] Unable to getting integrated address');
 									// Seems that we can't connect with daemon, then set array_integrated_address, little hack
-									$array_integrated_address["integrated_address"] = $address;
+									$integrated_address = $address;
 								}
 								$message = $this->verify_payment($payment_id, $amount_xmr2, $order);
 								echo "<h4>".$message."</h4>";
@@ -317,7 +317,7 @@ public function add_my_currency_symbol( $currency_symbol, $currency ) {
 						                          <img src='https://chart.googleapis.com/chart?cht=qr&chs=250x250&chl=" . $uri . "' class='img-responsive'>
 					                           </div>
 					                           <div class='col-sm-9 col-md-9 col-lg-9' style='padding:10px;'>
-						                          Send <b>" . $amount_xmr2 . " XMR</b> to<br/><input type='text'  class='form-control' value='" . $array_integrated_address["integrated_address"]."' disabled>
+						                          Send <b>" . $amount_xmr2 . " XMR</b> to<br/><input type='text'  class='form-control' value='" . $integrated_address . "'>
                                                 or scan QR Code with your mobile device<br/><br/>
                                                 <small>If you don't know how to pay with monero or you don't know what monero is, please go <a href='#'>here</a>. </small>
 					                           </div>
@@ -397,13 +397,14 @@ public function add_my_currency_symbol( $currency_symbol, $currency ) {
   }
 	public function getamountinfo(){
         	$wallet_amount = $this->monero_daemon->getbalance();
-		if(isset($wallet_amount)){
-			$this->log->add('Monero_gateway','[ERROR] Connection with daemon absent');
-		}
-        	$real_wallet_amount = $wallet_amount['balance'] / 1000000000000;
+        	$wallet_amount_unlocked = $this->monero_daemon->getbalance_unlocked();
+			if(!isset($wallet_amount)){
+				$this->log->add('Monero_gateway','[ERROR] Connection with daemon absent');
+			}
+        	$real_wallet_amount = $wallet_amount / 1000000000000;
         	$real_amount_rounded = round($real_wallet_amount, 6);
         
-        	$unlocked_wallet_amount = $wallet_amount['unlocked_balance'] / 1000000000000;
+        	$unlocked_wallet_amount = $wallet_amount_unlocked / 1000000000000;
         	$unlocked_amount_rounded = round($unlocked_wallet_amount, 6);
         
 		echo "Your balance is: ".$real_amount_rounded. " XMR </br>";
