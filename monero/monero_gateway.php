@@ -56,3 +56,17 @@ add_action( 'admin_menu',   'monero_create_menu' );
         
     );
  }
+
+function set_lang_file()
+{
+    # set the language file
+    $currentLocale = get_locale();
+    if(!empty($currentLocale))
+    {
+        $moFile = dirname(__FILE__) . "/lang/" . $currentLocale . ".mo";
+        if (@file_exists($moFile) && is_readable($moFile))
+        {
+            load_textdomain(KRBWC_I18N_DOMAIN, $moFile);
+        }
+    }
+}
