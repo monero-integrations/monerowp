@@ -40,9 +40,9 @@ class Monero_Library
 		$this->password = $pPass;
     }
     
-    public function requestDaemon($method)
+    public function requestDaemon($method, $params = null)
 	{
-		$request1 = json_encode(array('jsonrpc' => '2.0', 'id' => '0', 'method' => $method));
+		$request1 = json_encode(array('jsonrpc' => '2.0', 'id' => '0', 'method' => $method, 'params' => $params));
 		$response = wp_remote_post( 'http://' . $this->url, array(
 			'method' => 'POST',
 			'timeout' => 45,
@@ -62,9 +62,9 @@ class Monero_Library
 		}
 	}
     
-	public function _run($method)
+	public function _run($method, $params = null)
 	{
-       $result = $this->requestDaemon($method);
+       $result = $this->requestDaemon($method, $params);
        $decode = json_decode($result['body'], true);
        return $decode; //the result is returned as an array
     }
@@ -109,9 +109,6 @@ class Monero_Library
          return $height;
     }
     
-    // The functions that are commented out must be updated to use the WordPress HTTP API 
-    
-    /*
     public function incoming_transfer($type)
     {
         $incoming_parameters = array('transfer_type' => $type);
@@ -135,11 +132,12 @@ class Monero_Library
      
      /* A payment id can be passed as a string
         A random payment id will be generatd if one is not given */
-    /*public function make_integrated_address($payment_id)
+    public function make_integrated_address($payment_id)
     {
         $integrate_address_parameters = array('payment_id' => $payment_id);
-        $integrate_address_method = $this->_run('make_integrated_address', $integrate_address_parameters);
-        return $integrate_address_method;
+        $result = $this->_run('make_integrated_address', $integrate_address_parameters);
+        $integrated_address = $result['result']['integrated_address'];
+        return $integrated_address;
     }
     
     public function split_integrated_address($integrated_address)
@@ -192,5 +190,5 @@ class Monero_Library
       $get_bulk_payments_parameters = array('payment_id' => $payment_id, 'min_block_height' => $min_block_height);
       $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
       return $get_bulk_payments;
-	}*/
+	}
 } 
