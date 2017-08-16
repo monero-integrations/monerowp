@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 // Include our Gateway Class and register Payment Gateway with WooCommerce
 add_action( 'plugins_loaded', 'monero_init', 0 );
+set_lang_file();
 function monero_init() {
 	/* If the class doesn't exist (== WooCommerce isn't installed), return NULL */
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) return;
