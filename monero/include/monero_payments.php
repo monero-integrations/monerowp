@@ -374,16 +374,16 @@ public function add_my_currency_symbol( $currency_symbol, $currency ) {
        
       $amount_atomic_units = $amount * 1000000000000;
       $get_payments_method = $this->monero_daemon->get_payments($payment_id);
-      if(isset($get_payments_method["payments"][0]["amount"]))
+      if(isset($get_payments_method['result']["payments"]["0"]["amount"]))
       { 
-		if($get_payments_method["payments"][0]["amount"] >= $amount_atomic_units)
+		if($get_payments_method['result']["payments"][0]["amount"] >= $amount_atomic_units)
 		{
 			$message = "Payment has been received and confirmed. Thanks!";
 			$this->log->add('Monero_gateway','[SUCCESS] Payment has been recorded. Congrats!');
 			$paid = true;
 			$order = wc_get_order($order_id);
 			$order->update_status('completed', __('Payment has been received', 'monero_gateway'));
-			
+			global $wpdb;
 			$wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
 			
 			$this->reloadTime = 3000000000000; // Greatly increase the reload time as it is no longer needed
