@@ -394,7 +394,21 @@ class Monero_Gateway extends WC_Payment_Gateway
                 return $price;
         }
     }
-
+    
+    private function on_verified($payment_id, $amount_atomic_units, $order_id)
+    {
+        $message = "Payment has been received and confirmed. Thanks!";
+        $this->log->add('Monero_gateway', '[SUCCESS] Payment has been recorded. Congratulations!');
+        $this->confirmed = true;
+        $order = wc_get_order($order_id);
+        $order->update_status('completed', __('Payment has been received', 'monero_gateway'));
+        global $wpdb;
+        $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
+                         
+        $this->reloadTime = 3000000000000; // Greatly increase the reload time as it is no longer needed
+        return $message;
+    }
+    
     public function verify_payment($payment_id, $amount, $order_id)
     {
         /*
@@ -405,16 +419,25 @@ class Monero_Gateway extends WC_Payment_Gateway
         $amount_atomic_units = $amount * 1000000000000;
         $get_payments_method = $this->monero_daemon->get_payments($payment_id);
         if (isset($get_payments_method["payments"][0]["amount"])) {
-            if ($get_payments_method["payments"][0]["amount"] >= $amount_atomic_units) {
-                $message = "Payment has been received and confirmed. Thanks!";
-                $this->log->add('Monero_gateway', '[SUCCESS] Payment has been recorded. Congratulations!');
-                $this->confirmed = true;
-                $order = wc_get_order($order_id);
-                $order->update_status('completed', __('Payment has been received', 'monero_gateway'));
-                global $wpdb;
-                $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
+            if ($get_payments_method["payments"][0]["amount"] >= $amount_atomic_units)
+            {
+                $message = $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+            }
+            if ($get_payments_method["payments"][0]["amount"] < $amount_atomic_units)
+            {
+                $totalPayed = $get_payments_method["payments"][0]["amount"];
+                $outputs_count = count($get_payments_method["payments"]); // number of outputs recieved with this payment id
+                $output_counter = 1;
 
-                $this->reloadTime = 3000000000000; // Greatly increase the reload time as it is no longer needed
+                while($output_counter < $outputs_count)
+                {
+                         $totalPayed += $get_payments_method["payments"][$output_counter]["amount"];
+                         $output_counter++;
+                }
+                if($totalPayed >= $amount_atomic_units)
+                {
+                    $message = $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+                }
             }
         }
         return $message;
