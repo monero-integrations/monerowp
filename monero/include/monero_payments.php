@@ -30,8 +30,6 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->host = $this->get_option('daemon_host');
         $this->port = $this->get_option('daemon_port');
         $this->address = $this->get_option('monero_address');
-        $this->username = $this->get_option('username');
-        $this->password = $this->get_option('password');
         $this->discount = $this->get_option('discount');
 
         // After init_settings() is called, you can get the settings and load them into variables, e.g:
@@ -53,7 +51,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             add_filter('woocommerce_currency_symbol', 'add_my_currency_symbol', 10, 2);
             add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 2);
         }
-        $this->monero_daemon = new Monero_Library($this->host . ':' . $this->port . '/json_rpc', $this->username, $this->password);
+        $this->monero_daemon = new Monero_Library($this->host, $this->port);
     }
 
     public function init_form_fields()
@@ -97,21 +95,6 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'desc_tip' => __('This is the Daemon Host/IP to authorize the payment with port', 'monero_gateway'),
                 'default' => '18080',
             ),
-            'username' => array(
-                'title' => __('Monero Wallet username', 'monero_gateway'),
-                'desc_tip' => __('This is the username that you used with your monero wallet-rpc', 'monero_gateway'),
-                'type' => __('text'),
-                'default' => __('username', 'monero_gateway'),
-
-            ),
-            'password' => array(
-                'title' => __('Monero wallet RPC password', 'monero_gateway'),
-                'desc_tip' => __('This is the password that you used with your monero wallet-rpc', 'monero_gateway'),
-                'description' => __('you can leave these fields empty if you did not set', 'monero_gateway'),
-                'type' => __('text'),
-                'default' => ''
-
-            ),
             'discount' => array(
                 'title' => __('% discount for using XMR', 'monero_gateway'),
 
@@ -122,15 +105,15 @@ class Monero_Gateway extends WC_Payment_Gateway
 
             ),
             'environment' => array(
-                'title' => __(' Test Mode', 'monero_gateway'),
-                'label' => __('Enable Test Mode', 'monero_gateway'),
+                'title' => __(' Testnet', 'monero_gateway'),
+                'label' => __(' Check this if you are using testnet ', 'monero_gateway'),
                 'type' => 'checkbox',
                 'description' => __('Check this box if you are using testnet', 'monero_gateway'),
                 'default' => 'no'
             ),
             'onion_service' => array(
-                'title' => __(' Onion Service', 'monero_gateway'),
-                'label' => __('Enable Onion Service', 'monero_gateway'),
+                'title' => __(' SSL warnings ', 'monero_gateway'),
+                'label' => __(' Check to Silence SSL warnings', 'monero_gateway'),
                 'type' => 'checkbox',
                 'description' => __('Check this box if you are running on an Onion Service (Suppress SSL errors)', 'monero_gateway'),
                 'default' => 'no'
@@ -174,18 +157,21 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         $wallet_amount = $this->monero_daemon->getbalance();
         if (!isset($wallet_amount)) {
-            $this->log->add('Monero_gateway', '[ERROR] No connection with daemon');
-            $wallet_amount['balance'] = "0";
-            $wallet_amount['unlocked_balance'] = "0";
+            $this->log->add('Monero_gateway', '[ERROR] Can not connect to monero-wallet-rpc');
+            echo "</br>Your balance is: Not Avaliable </br>";
+            echo "Unlocked balance: Not Avaliable";
         }
-        $real_wallet_amount = $wallet_amount['balance'] / 1000000000000;
-        $real_amount_rounded = round($real_wallet_amount, 6);
+        else
+        {
+            $real_wallet_amount = $wallet_amount['balance'] / 1000000000000;
+            $real_amount_rounded = round($real_wallet_amount, 6);
 
-        $unlocked_wallet_amount = $wallet_amount['unlocked_balance'] / 1000000000000;
-        $unlocked_amount_rounded = round($unlocked_wallet_amount, 6);
-
-        echo "Your balance is: " . $real_amount_rounded . " XMR </br>";
-        echo "Unlocked balance: " . $unlocked_amount_rounded . " XMR </br>";
+            $unlocked_wallet_amount = $wallet_amount['unlocked_balance'] / 1000000000000;
+            $unlocked_amount_rounded = round($unlocked_wallet_amount, 6);
+        
+            echo "Your balance is: " . $real_amount_rounded . " XMR </br>";
+            echo "Unlocked balance: " . $unlocked_amount_rounded . " XMR </br>";
+        }
     }
 
     public function process_payment($order_id)
@@ -243,7 +229,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
         $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
         if (!isset($array_integrated_address)) {
-            $this->log->add('Monero_Gateway', '[ERROR] Unable to getting integrated address');
+            $this->log->add('Monero_Gateway', '[ERROR] Unable get integrated address');
             // Seems that we can't connect with daemon, then set array_integrated_address, little hack
             $array_integrated_address["integrated_address"] = $address;
         }
@@ -344,7 +330,8 @@ class Monero_Gateway extends WC_Payment_Gateway
             $stored_rate_transformed = $stored_rate[0]->rate / 100; //this will turn the stored rate back into a decimaled number
 
             if (isset($this->discount)) {
-                $discount_decimal = $this->discount / 100;
+                $sanatized_discount = preg_replace('/[^0-9]/', '', $this->discount);
+                $discount_decimal = $sanatized_discount / 100;
                 $new_amount = $amount / $stored_rate_transformed;
                 $discount = $new_amount * $discount_decimal;
                 $final_amount = $new_amount - $discount;
