@@ -9,7 +9,6 @@
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
  * Modified to work with monero-rpc wallet by Serhack and cryptochangements
- * This code isn't for Dark Net Markets, please report them to Authority!
  */
 class Monero_Library
 {
@@ -18,8 +17,8 @@ class Monero_Library
         CURLOPT_CONNECTTIMEOUT => 8,
         CURLOPT_TIMEOUT => 8
     );
-    private $username;
-    private $password;
+    protected $host;
+    protected $port;
     private $httpErrors = array(
         400 => '400 Bad Request',
         401 => '401 Unauthorized',
@@ -33,14 +32,14 @@ class Monero_Library
         503 => '503 Service Unavailable'
     );
 
-    public function __construct($pUrl, $pUser, $pPass)
+    public function __construct($pHost, $pPort)
     {
         $this->validate(false === extension_loaded('curl'), 'The curl extension must be loaded to use this class!');
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded to use this class!');
-
-        $this->url = $pUrl;
-        $this->username = $pUser;
-        $this->password = $pPass;
+        
+        $this->host = $pHost;
+        $this->port = $pPort;
+        $this->url = $pHost . ':' . $pPort . '/json_rpc';
     }
 
     public function validate($pFailed, $pErrMsg)
@@ -166,8 +165,6 @@ class Monero_Library
             throw new RuntimeException('Could\'t initialize a cURL session');
         }
         curl_setopt($ch, CURLOPT_URL, $this->url);
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
-        curl_setopt($ch, CURLOPT_USERPWD, $this->username . ":" . $this->password);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $pRequest);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
@@ -187,7 +184,7 @@ class Monero_Library
         }
         // check for curl error
         if (0 < curl_errno($ch)) {
-            echo 'Unable to connect to ' . $this->url . ' Error: ' . curl_error($ch);
+           echo '[ERROR] Failed to connect to monero-wallet-rpc at ' . $this->host . ' port '. $this->port .'</br>';
         }
         // close the connection
         curl_close($ch);
