@@ -213,7 +213,22 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         return false;
     }
-
+    
+    public function is_virtual_in_cart($order_id)
+    {
+        $order = wc_get_order( $order_id );
+        $items = $order->get_items();
+        
+        foreach ( $items as $item ) {
+            $product = new WC_Product( $item['product_id'] );
+            if ( $product->is_virtual() ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     public function instruction($order_id)
     {
         $order = wc_get_order($order_id);
@@ -233,6 +248,9 @@ class Monero_Gateway extends WC_Payment_Gateway
             // Seems that we can't connect with daemon, then set array_integrated_address, little hack
             $array_integrated_address["integrated_address"] = $address;
         }
+        if($this->is_virtual_in_cart($order_id) == true){
+            echo "test";
+        }
         $message = $this->verify_payment($payment_id, $amount_xmr2, $order);
         if ($this->confirmed) {
             $color = "006400";
@@ -240,6 +258,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             $color = "DC143C";
         }
         echo "<h4><font color=$color>" . $message . "</font></h4>";
+        
         echo "
         <head>
         <!--Import Google Icon Font-->
@@ -388,7 +407,13 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->log->add('Monero_gateway', '[SUCCESS] Payment has been recorded. Congratulations!');
         $this->confirmed = true;
         $order = wc_get_order($order_id);
-        $order->update_status('completed', __('Payment has been received', 'monero_gateway'));
+        
+        if($this->is_virtual_in_cart($order_id) == true){
+            $order->update_status('completed', __('Payment has been received', 'monero_gateway'));
+        }
+        else{
+            $order->update_status('processing', __('Payment has been received', 'monero_gateway'));
+        }
         global $wpdb;
         $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
                          
