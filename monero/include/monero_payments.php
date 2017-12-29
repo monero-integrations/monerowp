@@ -150,7 +150,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         echo "<table class='form-table'>";
         $this->generate_settings_html();
         echo "</table>";
-        echo "<h4>Learn more about using a password with the monero wallet-rpc <a href=\"https://github.com/cryptochangements34/monerowp/blob/master/README.md\">here</a></h4>";
+        echo "<h4>Learn more about using monero-wallet-rpc <a href=\"https://github.com/monero-integrations/monerowp/blob/master/README.md\">here</a></h4>";
     }
 
     public function getamountinfo()
