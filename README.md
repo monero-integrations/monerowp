@@ -27,7 +27,7 @@ This Monero plugin is an extension of WooCommerce, which works with WordPress
 
 ### Option 1: Running a full node yourself
 
-To do this: start the monero daemon on your server and leave it running in the background. This can be accomplished by running `./monerod` inside your monero downloads folder. The first time that you start your node, the monero daemon will download and sync the entire monero blockchain. This can take several hours and is best done on a machine with at least 4GB of ram, an SSD hard drive (with at least 15GB of free space), and a high speed internet connection.
+To do this: start the monero daemon on your server and leave it running in the background. This can be accomplished by running `./monerod` inside your monero downloads folder. The first time that you start your node, the monero daemon will download and sync the entire monero blockchain. This can take several hours and is best done on a machine with at least 4GB of ram, an SSD hard drive (with at least 40GB of free space), and a high speed internet connection.
 
 ### Option 2: Connecting to a remote node
 The easiest way to find a remote node to connect to is to visit [moneroworld.com](https://moneroworld.com/#nodes) and use one of the nodes offered. It is probably easiest to use node.moneroworld.com:18089 which will automatically connect you to a random node.
