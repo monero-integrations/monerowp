@@ -379,7 +379,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 
     public function retriveprice($currency)
     {
-        $xmr_price = file_get_contents('https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC,USD,EUR,CAD,INR,GBP&extraParams=monero_woocommerce');
+        $xmr_price = file_get_contents('https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC,USD,EUR,CAD,INR,GBP,COP&extraParams=monero_woocommerce');
         $price = json_decode($xmr_price, TRUE);
         if (!isset($price)) {
             $this->log->add('Monero_Gateway', '[ERROR] Unable to get the price of Monero');
@@ -395,6 +395,8 @@ class Monero_Gateway extends WC_Payment_Gateway
                 return $price['GBP'];
             case 'INR':
                 return $price['INR'];
+	    case 'COP':
+		return $price['COP'];
             case 'XMR':
                 $price = '1';
                 return $price;
