@@ -319,3 +319,62 @@ class Monero_Library
         return $get_bulk_payments;
     }
 }
+    
+class NodeTools
+{
+    public function get_last_block_height()
+    {
+        $curl = curl_init();
+        
+        curl_setopt_array($curl, array(
+                                       CURLOPT_RETURNTRANSFER => 1,
+                                       CURLOPT_URL => 'https://xmrchain.net/api/networkinfo',
+                                       ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        
+        $array = json_decode($resp, true);
+        return $array['data']['height'] - 1;
+    }
+    
+    public function get_txs_from_block($height)
+    {
+        $curl = curl_init();
+        
+        curl_setopt_array($curl, array(
+                                       CURLOPT_RETURNTRANSFER => 1,
+                                       CURLOPT_URL => 'https://xmrchain.net/api/search/' . $height,
+                                       ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        
+        $array = json_decode($resp, true);
+        
+        return $array['data']['txs'];
+    }
+    
+    public function check_tx($tx_hash, $address, $viewKey)
+    {
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+                                       CURLOPT_RETURNTRANSFER => 1,
+                                       CURLOPT_URL => 'https://xmrchain.net/api/outputs?txhash=' .$tx_hash . '&address='. $address . '&viewkey='. $viewKey .'&txprove=0',
+                                       ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        $array = json_decode($resp, true);
+        $output_count = count($array['data']['outputs']);
+        $i = 0;
+        while($i < $output_count)
+        {
+            if($array['data']['outputs'][$i]['match'])
+            {
+                return $array['data']['outputs'][$i];
+            }
+            
+            $i++;
+        }
+        
+    }
+    
+}
