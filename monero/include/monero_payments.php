@@ -12,6 +12,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     private $discount;
     private $confirmed = false;
     private $monero_daemon;
+    private $non_rpc = false;
 
     function __construct()
     {
@@ -30,7 +31,20 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->host = $this->get_option('daemon_host');
         $this->port = $this->get_option('daemon_port');
         $this->address = $this->get_option('monero_address');
+        $this->viewKey = $this->get_option('viewKey');
         $this->discount = $this->get_option('discount');
+        
+        $this->use_viewKey = $this->get_option('use_viewKey');
+        $this->use_rpc = $this->get_option('use_rpc');
+        
+        if($this->use_viewKey == 'yes')
+        {
+            $this->non_rpc = true;
+        }
+        if($this->use_rpc == 'yes')
+        {
+            $this->non_rpc = false;
+        }
 
         // After init_settings() is called, you can get the settings and load them into variables, e.g:
         // $this->title = $this->get_option('title' );
@@ -77,11 +91,31 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'default' => __('Pay securely using XMR.', 'monero_gateway')
 
             ),
+            'use_viewKey' => array(
+                'title' => __('Use ViewKey', 'monero_gateway'),
+                'label' => __(' Verify Transaction with ViewKey ', 'monero_gateway'),
+                'type' => 'checkbox',
+                'description' => __('Fill in the Address and ViewKey fields to verify transactions with your ViewKey', 'monero_gateway'),
+                'default' => 'no'
+            ),
             'monero_address' => array(
                 'title' => __('Monero Address', 'monero_gateway'),
                 'label' => __('Useful for people that have not a daemon online'),
                 'type' => 'text',
                 'desc_tip' => __('Monero Wallet Address', 'monero_gateway')
+            ),
+            'viewKey' => array(
+                'title' => __('Secret ViewKey', 'monero_gateway'),
+                'label' => __('Secret ViewKey'),
+                'type' => 'text',
+                'desc_tip' => __('Your secret ViewKey', 'monero_gateway')
+            ),
+            'use_rpc' => array(
+                'title' => __('Use monero-wallet-rpc', 'monero_gateway'),
+                'label' => __(' Verify transactions with the monero-wallet-rpc ', 'monero_gateway'),
+                'type' => 'checkbox',
+                'description' => __('This must be setup seperatly', 'monero_gateway'),
+                'default' => 'no'
             ),
             'daemon_host' => array(
                 'title' => __('Monero wallet rpc Host/ IP', 'monero_gateway'),
@@ -100,8 +134,8 @@ class Monero_Gateway extends WC_Payment_Gateway
 
                 'desc_tip' => __('Provide a discount to your customers for making a private payment with XMR!', 'monero_gateway'),
                 'description' => __('Do you want to spread the word about Monero? Offer a small discount! Leave this empty if you do not wish to provide a discount', 'monero_gateway'),
-                'type' => __('text'),
-                'default' => '5%'
+                'type' => __('number'),
+                'default' => '5'
 
             ),
             'environment' => array(
@@ -140,17 +174,19 @@ class Monero_Gateway extends WC_Payment_Gateway
     public function admin_options()
     {
         $this->log->add('Monero_gateway', '[SUCCESS] Monero Settings OK');
-
         echo "<h1>Monero Payment Gateway</h1>";
 
         echo "<p>Welcome to Monero Extension for WooCommerce. Getting started: Make a connection with daemon <a href='https://reddit.com/u/serhack'>Contact Me</a>";
         echo "<div style='border:1px solid #DDD;padding:5px 10px;font-weight:bold;color:#223079;background-color:#9ddff3;'>";
-        $this->getamountinfo();
+        
+        if(!$this->non_rpc) // only try to get balance data if using wallet-rpc
+            $this->getamountinfo();
+        
         echo "</div>";
         echo "<table class='form-table'>";
         $this->generate_settings_html();
         echo "</table>";
-        echo "<h4>Learn more about using monero-wallet-rpc <a href=\"https://github.com/monero-integrations/monerowp/blob/master/README.md\">here</a></h4>";
+        echo "<h4>Learn more about using monero-wallet-rpc <a href=\"https://github.com/monero-integrations/monerowp/blob/master/README.md\">here</a> and viewkeys <a href=\"https://getmonero.org/resources/moneropedia/viewkey.html\">here</a> </h4>";
     }
 
     public function getamountinfo()
@@ -197,7 +233,15 @@ class Monero_Gateway extends WC_Payment_Gateway
     public function validate_fields()
     {
         if ($this->check_monero() != TRUE) {
-            echo "<div class=\"error\"><p>Your Monero Address doesn't seem valid. Have you checked it?</p></div>";
+            echo "<div class=\"error\"><p>Your Monero Address doesn't look valid. Have you checked it?</p></div>";
+        }
+        if(!$this->check_viewKey())
+        {
+            echo "<div class=\"error\"><p>Your ViewKey doesn't look valid. Have you checked it?</p></div>";
+        }
+        if($this->check_checkedBoxes())
+        {
+            echo "<div class=\"error\"><p>You must choose to either use monero-wallet-rpc or a ViewKey, not both</p></div>";
         }
 
     }
@@ -212,6 +256,29 @@ class Monero_Gateway extends WC_Payment_Gateway
             return true;
         }
         return false;
+    }
+    public function check_viewKey()
+    {
+        if($this->use_viewKey == 'yes')
+        {
+            if (strlen($this->viewKey) == 64) {
+                return true;
+            }
+            return false;
+        }
+        return true;
+    }
+    public function check_checkedBoxes()
+    {
+        if($this->use_viewKey == 'yes')
+        {
+            if($this->use_rpc == 'yes')
+            {
+                return true;
+            }
+        }
+        else
+            return false;
     }
     
     public function is_virtual_in_cart($order_id)
@@ -231,93 +298,164 @@ class Monero_Gateway extends WC_Payment_Gateway
     
     public function instruction($order_id)
     {
-        $order = wc_get_order($order_id);
-        $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
-        $payment_id = $this->set_paymentid_cookie();
-        $currency = $order->get_currency();
-        $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
-        $address = $this->address;
-        if (!isset($address)) {
-            // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
-            $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
+        if($this->non_rpc)
+        {
+            $order = wc_get_order($order_id);
+            $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
+            $payment_id = $this->set_paymentid_cookie(32);
+            $currency = $order->get_currency();
+            $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
+            $address = $this->address;
+            if (!isset($address)) {
+                // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
+                $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
+            }
+            $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
+            
+            if($this->verify_non_rpc($payment_id, $amount_xmr2, $order_id) == false);
+            {
+                echo "<h4> We are waiting for your transaction to be confirmed </h4>";
+           }
+            
+            echo "
+            <head>
+            <!--Import Google Icon Font-->
+            <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
+            <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
+            <link href='http://cdn.monerointegrations.com/style.css' rel='stylesheet'>
+            <!--Let browser know website is optimized for mobile-->
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+                </head>
+                <body>
+                <!-- page container  -->
+                <div class='page-container'>
+                <!-- monero container payment box -->
+                <div class='container-xmr-payment'>
+                <!-- header -->
+                <div class='header-xmr-payment'>
+                <span class='logo-xmr'><img src='http://cdn.monerointegrations.com/logomonero.png' /></span>
+                <span class='xmr-payment-text-header'><h2>MONERO PAYMENT</h2></span>
+                </div>
+                <!-- end header -->
+                <!-- xmr content box -->
+                <div class='content-xmr-payment'>
+                <div class='xmr-amount-send'>
+                <span class='xmr-label'>Send:</span>
+                <div class='xmr-amount-box'>".$amount_xmr2."</div>
+                <span class='xmr-label'>Payment ID:</span>
+                <div class='xmr-integrated-address-box'>".$payment_id."</div>
+                </div>
+                <div class='xmr-address'>
+                <span class='xmr-label'>To this address:</span>
+                <div class='xmr-address-box'>".$address."</div>
+                </div>
+                <div class='xmr-qr-code'>
+                <span class='xmr-label'>Or scan QR:</span>
+                <div class='xmr-qr-code-box'><img src='https://api.qrserver.com/v1/create-qr-code/? size=200x200&data=".$uri."' /></div>
+                </div>
+                <div class='clear'></div>
+                </div>
+                <!-- end content box -->
+                <!-- footer xmr payment -->
+                <div class='footer-xmr-payment'>
+                <a href='https://getmonero.org' target='_blank'>Help</a> | <a href='https://getmonero.org' target='_blank'>About Monero</a>
+                </div>
+                <!-- end footer xmr payment -->
+                </div>
+                <!-- end monero container payment box -->
+                </div>
+                <!-- end page container  -->
+                </body>
+                ";
+                
+                echo "
+                <script type='text/javascript'>setTimeout(function () { location.reload(true); }, $this->reloadTime);</script>";
         }
-        $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
-        $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
-        if (!isset($array_integrated_address)) {
-            $this->log->add('Monero_Gateway', '[ERROR] Unable get integrated address');
-            // Seems that we can't connect with daemon, then set array_integrated_address, little hack
-            $array_integrated_address["integrated_address"] = $address;
-        }
-        if($this->is_virtual_in_cart($order_id) == true){
-            echo "test";
-        }
-        $message = $this->verify_payment($payment_id, $amount_xmr2, $order);
-        if ($this->confirmed) {
-            $color = "006400";
-        } else {
-            $color = "DC143C";
-        }
-        echo "<h4><font color=$color>" . $message . "</font></h4>";
+        else
+        {
+            $order = wc_get_order($order_id);
+            $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
+            $payment_id = $this->set_paymentid_cookie(8);
+            $currency = $order->get_currency();
+            $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
+            $address = $this->address;
+            if (!isset($address)) {
+                // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
+                $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
+            }
+            $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
+            $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
+            if (!isset($array_integrated_address)) {
+                $this->log->add('Monero_Gateway', '[ERROR] Unable get integrated address');
+                // Seems that we can't connect with daemon, then set array_integrated_address, little hack
+                $array_integrated_address["integrated_address"] = $address;
+            }
+            $message = $this->verify_payment($payment_id, $amount_xmr2, $order);
+            if ($this->confirmed) {
+                $color = "006400";
+            } else {
+                $color = "DC143C";
+            }
+            echo "<h4><font color=$color>" . $message . "</font></h4>";
         
-        echo "
-        <head>
-        <!--Import Google Icon Font-->
-        <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
-        <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
-        <link href='http://cdn.monerointegrations.com/style.css' rel='stylesheet'>
-        <!--Let browser know website is optimized for mobile-->
-            <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
-            </head>
-            <body>
-            <!-- page container  -->
-            <div class='page-container'>
-            <!-- monero container payment box -->
-            <div class='container-xmr-payment'>
-            <!-- header -->
-            <div class='header-xmr-payment'>
-            <span class='logo-xmr'><img src='http://cdn.monerointegrations.com/logomonero.png' /></span>
-            <span class='xmr-payment-text-header'><h2>MONERO PAYMENT</h2></span>
-            </div>
-            <!-- end header -->
-            <!-- xmr content box -->
-            <div class='content-xmr-payment'>
-            <div class='xmr-amount-send'>
-            <span class='xmr-label'>Send:</span>
-            <div class='xmr-amount-box'>".$amount_xmr2."</div><div class='xmr-box'>XMR</div>
-            </div>
-            <div class='xmr-address'>
-            <span class='xmr-label'>To this address:</span>
-            <div class='xmr-address-box'>".$array_integrated_address['integrated_address']."</div>
-            </div>
-            <div class='xmr-qr-code'>
-            <span class='xmr-label'>Or scan QR:</span>
-            <div class='xmr-qr-code-box'><img src='https://api.qrserver.com/v1/create-qr-code/? size=200x200&data=".$uri."' /></div>
-            </div>
-            <div class='clear'></div>
-            </div>
-            <!-- end content box -->
-            <!-- footer xmr payment -->
-            <div class='footer-xmr-payment'>
-            <a href='https://getmonero.org' target='_blank'>Help</a> | <a href='https://getmonero.org' target='_blank'>About Monero</a>
-            </div>
-            <!-- end footer xmr payment -->
-            </div>
-            <!-- end monero container payment box -->
-            </div>
-            <!-- end page container  -->
-            </body>
-        ";
-	    
-	    
-	    
-        echo "
-      <script type='text/javascript'>setTimeout(function () { location.reload(true); }, $this->reloadTime);</script>";
+            echo "
+            <head>
+            <!--Import Google Icon Font-->
+            <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
+            <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
+            <link href='http://127.0.0.1:8888/style.css' rel='stylesheet'>
+            <!--Let browser know website is optimized for mobile-->
+                <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
+                </head>
+                <body>
+                <!-- page container  -->
+                <div class='page-container'>
+                <!-- monero container payment box -->
+                <div class='container-xmr-payment'>
+                <!-- header -->
+                <div class='header-xmr-payment'>
+                <span class='logo-xmr'><img src='http://cdn.monerointegrations.com/logomonero.png' /></span>
+                <span class='xmr-payment-text-header'><h2>MONERO PAYMENT</h2></span>
+                </div>
+                <!-- end header -->
+                <!-- xmr content box -->
+                <div class='content-xmr-payment'>
+                <div class='xmr-amount-send'>
+                <span class='xmr-label'>Send:</span>
+                <div class='xmr-amount-box'>".$amount_xmr2."</div>
+                </div>
+                <div class='xmr-address'>
+                <span class='xmr-label'>To this address:</span>
+                <div class='xmr-address-box'>".$array_integrated_address['integrated_address']."</div>
+                </div>
+                <div class='xmr-qr-code'>
+                <span class='xmr-label'>Or scan QR:</span>
+                <div class='xmr-qr-code-box'><img src='https://api.qrserver.com/v1/create-qr-code/? size=200x200&data=".$uri."' /></div>
+                </div>
+                <div class='clear'></div>
+                </div>
+                <!-- end content box -->
+                <!-- footer xmr payment -->
+                <div class='footer-xmr-payment'>
+                <a href='https://getmonero.org' target='_blank'>Help</a> | <a href='https://getmonero.org' target='_blank'>About Monero</a>
+                </div>
+                <!-- end footer xmr payment -->
+                </div>
+                <!-- end monero container payment box -->
+                </div>
+                <!-- end page container  -->
+                </body>
+            ";
+
+            echo "
+          <script type='text/javascript'>setTimeout(function () { location.reload(true); }, $this->reloadTime);</script>";
+        }
     }
 
-    private function set_paymentid_cookie()
+    private function set_paymentid_cookie($size)
     {
         if (!isset($_COOKIE['payment_id'])) {
-            $payment_id = bin2hex(openssl_random_pseudo_bytes(8));
+            $payment_id = bin2hex(openssl_random_pseudo_bytes($size));
             setcookie('payment_id', $payment_id, time() + 2700);
         }
         else{
@@ -455,6 +593,41 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
         }
         return $message;
+    }
+                         
+    public function verify_non_rpc($payment_id, $amount, $order_id)
+    {
+        $tools = new NodeTools();
+        $bc_height = $tools->get_last_block_height();
+        $txs_from_block = $tools->get_txs_from_block($bc_height);
+        $tx_count = count($txs_from_block) - 1; // The tx at index 0 is a coinbase tx so it can be ignored
+        
+        $i = 1;
+        $output_found;
+        $block_index;
+        while($i <= $tx_count)
+        {
+            $tx_hash = $txs_from_block[$i]['tx_hash'];
+            $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
+            if($result)
+            {
+                $output_found = $result;
+                $block_index = $i;
+                $i = $tx_count; // finish loop
+            }
+            $i++;
+        }
+        if(isset($output_found))
+        {
+            $amount_atomic_units = $amount * 1000000000000;
+            if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found >= $amount)
+            {
+                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+            }
+            
+            return true;
+        }
+            return false;
     }
 
     public function do_ssl_check()
