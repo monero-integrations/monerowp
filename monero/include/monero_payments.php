@@ -332,11 +332,11 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
             if($this->confirmed == false)
             {
-                echo "<h4> We are waiting for your transaction to be confirmed </h4>";
+                echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
             }
             if($this->confirmed)
             {
-                echo "<h4> Your transaction has been successfully confirmed! </h4>";
+                echo "<h4><font color=006400> Your transaction has been successfully confirmed! </font></h4>";
             }
             
             echo "
