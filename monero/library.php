@@ -377,4 +377,18 @@ class NodeTools
         
     }
     
+    function get_mempool_txs()
+    {
+        $curl = curl_init();
+        
+        curl_setopt_array($curl, array(
+                                       CURLOPT_RETURNTRANSFER => 1,
+                                       CURLOPT_URL => 'https://xmrchain.net/api/mempool',
+                                       ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        $array = json_decode($resp, true);
+        return $array;
+    }
+    
 }

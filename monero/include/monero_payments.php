@@ -13,6 +13,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     private $confirmed = false;
     private $monero_daemon;
     private $non_rpc = false;
+    private $zero_cofirm = false;
 
     function __construct()
     {
@@ -33,6 +34,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->address = $this->get_option('monero_address');
         $this->viewKey = $this->get_option('viewKey');
         $this->discount = $this->get_option('discount');
+        $this->accept_zero_conf = $this->get_option('zero_conf');
         
         $this->use_viewKey = $this->get_option('use_viewKey');
         $this->use_rpc = $this->get_option('use_rpc');
@@ -45,7 +47,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         {
             $this->non_rpc = false;
         }
-
+        if($this->accept_zero_conf == 'yes')
+        {
+            $this->zero_confirm = true;
+        }
         // After init_settings() is called, you can get the settings and load them into variables, e.g:
         // $this->title = $this->get_option('title' );
         $this->init_settings();
@@ -143,6 +148,13 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'label' => __(' Check this if you are using testnet ', 'monero_gateway'),
                 'type' => 'checkbox',
                 'description' => __('Check this box if you are using testnet', 'monero_gateway'),
+                'default' => 'no'
+            ),
+            'zero_conf' => array(
+                'title' => __(' Accept 0 conf txs', 'monero_gateway'),
+                'label' => __(' Accept 0-confirmation transactions ', 'monero_gateway'),
+                'type' => 'checkbox',
+                'description' => __('This is faster but less secure', 'monero_gateway'),
                 'default' => 'no'
             ),
             'onion_service' => array(
@@ -312,14 +324,19 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
             $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
             
-            $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
+            if($this->zero_confirm){
+                $this->verify_zero_conf($payment_id, $amount, $order_id);
+            }
+            else{
+                $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
+            }
             if($this->confirmed == false)
             {
-                echo "<h4> We are waiting for your transaction to be confirmed </h4>";
+                echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
             }
             if($this->confirmed)
             {
-                echo "<h4> Your transaction has been successfully confirmed! </h4>";
+                echo "<h4><font color=006400> Your transaction has been successfully confirmed! </font></h4>";
             }
             
             echo "
@@ -628,13 +645,49 @@ class Monero_Gateway extends WC_Payment_Gateway
         if(isset($output_found))
         {
             $amount_atomic_units = $amount * 1000000000000;
-            if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found >= $amount)
+            if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
             {
                 $this->on_verified($payment_id, $amount_atomic_units, $order_id);
             }
             
             return true;
         }
+            return false;
+    }
+                         
+    public function verify_zero_conf($payment_id, $amount, $order_id)
+    {
+        $tools = new NodeTools();
+        $txs_from_mempool = $tools->get_mempool_txs();;
+        $tx_count = count($txs_from_mempool['data']['txs']);
+        $i = 0;
+        $output_found;
+        
+        while($i <= $tx_count)
+        {
+            $tx_hash = $txs_from_mempool['data']['txs'][$i]['tx_hash'];
+            if(strlen($txs_from_mempool['data']['txs'][$i]['payment_id']) != 0)
+            {
+                $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
+                if($result)
+                {
+                    $output_found = $result;
+                    $tx_i = $i;
+                    $i = $tx_count; // finish loop
+                }
+            }
+            $i++;
+        }
+        if(isset($output_found))
+        {
+            $amount_atomic_units = $amount * 1000000000000;
+            if($txs_from_mempool['data']['txs'][$tx_i]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
+            {
+                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+            }
+            return true;
+        }
+        else
             return false;
     }
 
