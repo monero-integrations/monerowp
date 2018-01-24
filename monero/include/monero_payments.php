@@ -312,10 +312,15 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
             $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
             
-            if($this->verify_non_rpc($payment_id, $amount_xmr2, $order_id) == false);
+            $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
+            if($this->confirmed == false)
             {
                 echo "<h4> We are waiting for your transaction to be confirmed </h4>";
-           }
+            }
+            if($this->confirmed)
+            {
+                echo "<h4> Your transaction has been successfully confirmed! </h4>";
+            }
             
             echo "
             <head>
@@ -608,12 +613,15 @@ class Monero_Gateway extends WC_Payment_Gateway
         while($i <= $tx_count)
         {
             $tx_hash = $txs_from_block[$i]['tx_hash'];
-            $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-            if($result)
+            if(strlen($txs_from_block[$i]['payment_id']) != 0)
             {
-                $output_found = $result;
-                $block_index = $i;
-                $i = $tx_count; // finish loop
+                $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
+                if($result)
+                {
+                    $output_found = $result;
+                    $block_index = $i;
+                    $i = $tx_count; // finish loop
+                }
             }
             $i++;
         }
