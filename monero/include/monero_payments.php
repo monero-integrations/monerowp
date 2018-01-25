@@ -21,7 +21,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->method_title = __("Monero GateWay", 'monero_gateway');
         $this->method_description = __("Monero Payment Gateway Plug-in for WooCommerce. You can find more information about this payment gateway on our website. You'll need a daemon online for your address.", 'monero_gateway');
         $this->title = __("Monero Gateway", 'monero_gateway');
-        $this->version = "0.3";
+        $this->version = "2.0";
         //
         $this->icon = apply_filters('woocommerce_offline_icon', '');
         $this->has_fields = false;
