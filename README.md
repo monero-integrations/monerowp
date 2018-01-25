@@ -6,7 +6,7 @@ This plugin is rather simple but there are a few things that need to be set up b
 
 * A web server! Ideally with the most recent versions of PHP and mysql
 
-* The Monero wallet-cli and Monero wallet-rpc tools found [here](https://getmonero.org/downloads/)
+* A Monero wallet. You can find the official wallet [here](https://getmonero.org/downloads/)
 
 * [WordPress](https://wordpress.org)
 Wordpress is the backend tool that is needed to use WooCommerce and this Monero plugin
@@ -23,7 +23,14 @@ This Monero plugin is an extension of WooCommerce, which works with WordPress
 
 * Activate the plugin from the WordPress admin panel: Once you login to the admin panel in WordPress, click on "Installed Plugins" under "Plugins". Then simply click "Activate" where it says "Monero - WooCommerce Gateway"
 
-## Step 2: Get a monero daemon to connect to
+## Step 2 Option 1: Use your wallet address and viewkey
+
+* Get your Monero wallet address starting with '4'
+* Get your wallet secret viewkey from your wallet
+
+A note on privacy: When you validate transactions with your private viewkey, your viewkey is sent to (but not stored on) xmrchain.net over HTTPS. This could potentally allow an attacker to see your incoming, but not outgoing, transactions if he were to get his hands on your viewkey. Even if this were to happen, your funds would still be safe and it would be impossible for somebody to steal your money. For maximum privacy use your own monero-wallet-rpc instance.
+
+## Step 2 Option 2: Get a monero daemon to connect to
 
 ### Option 1: Running a full node yourself
 
@@ -32,7 +39,7 @@ To do this: start the monero daemon on your server and leave it running in the b
 ### Option 2: Connecting to a remote node
 The easiest way to find a remote node to connect to is to visit [moneroworld.com](https://moneroworld.com/#nodes) and use one of the nodes offered. It is probably easiest to use node.moneroworld.com:18089 which will automatically connect you to a random node.
 
-## Step 3: Setup your  monero wallet-rpc
+### Setup your  monero wallet-rpc
 
 * Setup a monero wallet using the monero-wallet-cli tool. If you do not know how to do this you can learn about it at [getmonero.org](https://getmonero.org/resources/user-guides/monero-wallet-cli.html)
 
@@ -50,13 +57,23 @@ The easiest way to find a remote node to connect to is to visit [moneroworld.com
 
 * Check the box labeled "Enable this payment gateway"
 
+* Check either "Use ViewKey" or "Use monero-wallet-rpc"
+
+If You chose to use viewkey:
+
+* Enter your monero wallet address in the box labled "Monero Address". If you do not know your address, you can run the `address` commmand in your monero wallet
+
+* Enter your secret viewkey in the box labeled "ViewKey"
+
+If you chose to use monero-wallet-rpc:
+
 * Enter your monero wallet address in the box labled "Monero Address". If you do not know your address, you can run the `address` commmand in your monero wallet
 
 * Enter the IP address of your server in the box labeled "Monero wallet rpc Host/IP"
 
 * Enter the port number of the Wallet RPC in the box labeled "Monero wallet rpc port" (will be `18082` if you used the above example).
 
-* Enter the username and password that you want to use in their respective feilds
+Finally:
 
 * Click on "Save changes"
 
