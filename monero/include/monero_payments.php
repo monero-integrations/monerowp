@@ -523,11 +523,20 @@ class Monero_Gateway extends WC_Payment_Gateway
         {
             $xmr_live_price = $this->retriveprice($currency);
             $live_for_storing = $xmr_live_price * 100; //This will remove the decimal so that it can easily be stored as an integer
-            $new_amount = $amount / $xmr_live_price;
-            $rounded_amount = round($new_amount, 12);
 
-            $wpdb->query("INSERT INTO $payment_id (rate)
-										 VALUES ($live_for_storing)");
+            $wpdb->query("INSERT INTO $payment_id (rate) VALUES ($live_for_storing)");
+            if(isset($this->discount))
+            {
+               $new_amount = $amount / $xmr_live_price;
+               $discount = $new_amount * $this->discount / 100;
+               $discounted_price = $new_amount - $discount;
+               $rounded_amount = round($discounted_price, 12);
+            }
+            else
+            {
+               $new_amount = $amount / $xmr_live_price;
+               $rounded_amount = round($new_amount, 12);
+            }
         }
 
         return $rounded_amount;
