@@ -400,11 +400,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             $payment_id = $this->set_paymentid_cookie(8);
             $currency = $order->get_currency();
             $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
-            $address = $this->address;
-            if (!isset($address)) {
-                // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
-                $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
-            }
+
             $uri = "monero:$address?amount=$amount?payment_id=$payment_id";
             $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
             if (!isset($array_integrated_address)) {
