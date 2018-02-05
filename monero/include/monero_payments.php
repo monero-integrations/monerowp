@@ -623,17 +623,57 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         return $message;
     }
-                         
+    public function last_block_seen($height) // sometimes 2 blocks are mined within a few seconds of eacher. Make sure we don't miss one
+    {
+        if (!isset($_COOKIE['last_seen_block']))
+        {
+            setcookie('last_seen_block', $height, time() + 2700);
+            return 0;
+        }
+        else{
+            $cookie_block = $_COOKIE['last_seen_block'];
+            $difference = $height - $cookie_block;
+            setcookie('last_seen_block', $height, time() + 2700);
+            return $difference;
+        }
+    }
     public function verify_non_rpc($payment_id, $amount, $order_id)
     {
         $tools = new NodeTools();
         $bc_height = $tools->get_last_block_height();
+
+        $block_difference = $this->last_block_seen($bc_height);
+        
         $txs_from_block = $tools->get_txs_from_block($bc_height);
         $tx_count = count($txs_from_block) - 1; // The tx at index 0 is a coinbase tx so it can be ignored
         
-        $i = 1;
         $output_found;
         $block_index;
+        
+        if($difference != 0)
+        {
+            $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
+            $tx_count_2 = count($txs_from_block_2) - 1;
+            
+            $i = 1;
+            while($i <= $tx_count_2)
+            {
+                $tx_hash = $txs_from_block_2[$i]['tx_hash'];
+                if(strlen($txs_from_block_2[$i]['payment_id']) != 0)
+                {
+                    $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
+                    if($result)
+                    {
+                        $output_found = $result;
+                        $block_index = $i;
+                        $i = $tx_count_2; // finish loop
+                    }
+                }
+                $i++;
+            }
+        }
+
+        $i = 1;
         while($i <= $tx_count)
         {
             $tx_hash = $txs_from_block[$i]['tx_hash'];
@@ -649,6 +689,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
             $i++;
         }
+        
         if(isset($output_found))
         {
             $amount_atomic_units = $amount * 1000000000000;
@@ -661,7 +702,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
             return false;
     }
-                         
+    
     public function verify_zero_conf($payment_id, $amount, $order_id)
     {
         $tools = new NodeTools();
