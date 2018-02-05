@@ -650,7 +650,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $output_found;
         $block_index;
         
-        if($difference != 0)
+        if($block_difference != 0)
         {
             $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
             $tx_count_2 = count($txs_from_block_2) - 1;
