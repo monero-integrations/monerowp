@@ -8,7 +8,7 @@
 
 class Monero_Gateway extends WC_Payment_Gateway
 {
-    private $reloadTime = 30000;
+    private $reloadTime = 17000;
     private $discount;
     private $confirmed = false;
     private $monero_daemon;
@@ -325,7 +325,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             $uri = "monero:$address?tx_payment_id=$payment_id";
             
             if($this->zero_confirm){
-                $this->verify_zero_conf($payment_id, $amount, $order_id);
+                $this->verify_zero_conf($payment_id, $amount_xmr2, $order_id);
             }
             else{
                 $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
@@ -578,10 +578,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         $order = wc_get_order($order_id);
         
         if($this->is_virtual_in_cart($order_id) == true){
-            $order->update_status('completed', __('Payment has been received', 'monero_gateway'));
+            $order->update_status('completed', __('Payment has been received' . $payment_id, 'monero_gateway'));
         }
         else{
-            $order->update_status('processing', __('Payment has been received', 'monero_gateway'));
+            $order->update_status('processing', __('Payment has been received' . $payment_id, 'monero_gateway')); // Show payment id used for order
         }
         global $wpdb;
         $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
@@ -652,6 +652,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         
         if($block_difference != 0)
         {
+            if($block_difference > 2){
+                $this->log->add('[WARNING] Block difference is greater than 2');
+            }
+            
             $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
             $tx_count_2 = count($txs_from_block_2) - 1;
             
@@ -693,7 +697,12 @@ class Monero_Gateway extends WC_Payment_Gateway
         if(isset($output_found))
         {
             $amount_atomic_units = $amount * 1000000000000;
+            
             if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
+            {
+                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+            }
+            if($txs_from_block_2[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
             {
                 $this->on_verified($payment_id, $amount_atomic_units, $order_id);
             }
