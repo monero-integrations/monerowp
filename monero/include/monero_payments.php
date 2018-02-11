@@ -8,7 +8,7 @@
 
 class Monero_Gateway extends WC_Payment_Gateway
 {
-    private $reloadTime = 30000;
+    private $reloadTime = 17000;
     private $discount;
     private $confirmed = false;
     private $monero_daemon;
@@ -325,7 +325,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             $uri = "monero:$address?tx_payment_id=$payment_id";
             
             if($this->zero_confirm){
-                $this->verify_zero_conf($payment_id, $amount, $order_id);
+                $this->verify_zero_conf($payment_id, $amount_xmr2, $order_id);
             }
             else{
                 $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
@@ -693,7 +693,12 @@ class Monero_Gateway extends WC_Payment_Gateway
         if(isset($output_found))
         {
             $amount_atomic_units = $amount * 1000000000000;
+            
             if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
+            {
+                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+            }
+            if($txs_from_block_2[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
             {
                 $this->on_verified($payment_id, $amount_atomic_units, $order_id);
             }
