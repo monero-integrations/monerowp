@@ -312,6 +312,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         if($this->non_rpc)
         {
+            echo "<noscript><h1>You must enable javascript in order to confirm your order</h1></noscript>";
             $order = wc_get_order($order_id);
             $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
             $payment_id = $this->set_paymentid_cookie(32);
@@ -341,6 +342,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             
             echo "
             <head>
+            <p>*don't forget to include the payment ID in your transaction</p>
             <!--Import Google Icon Font-->
             <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
             <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
@@ -652,8 +654,8 @@ class Monero_Gateway extends WC_Payment_Gateway
         
         if($block_difference != 0)
         {
-            if($block_difference > 2){
-                $this->log->add('[WARNING] Block difference is greater than 2');
+            if($block_difference >= 2){
+                $this->log->add('[WARNING] Block difference is greater or equal to 2');
             }
             
             $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
