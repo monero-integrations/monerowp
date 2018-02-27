@@ -319,6 +319,11 @@ class Monero_Gateway extends WC_Payment_Gateway
             $currency = $order->get_currency();
             $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
             $address = $this->address;
+            
+            $order->update_meta_data( "Payment ID", $payment_id);
+            $order->update_meta_data( "Amount requested (XMR)", $amount_xmr2);
+            $order->save();
+            
             if (!isset($address)) {
                 // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
                 $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
@@ -402,6 +407,10 @@ class Monero_Gateway extends WC_Payment_Gateway
             $payment_id = $this->set_paymentid_cookie(8);
             $currency = $order->get_currency();
             $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
+            
+            $order->update_meta_data( "Payment ID", $payment_id);
+            $order->update_meta_data( "Amount requested (XMR)", $amount_xmr2);
+            $order->save();
 
             $uri = "monero:$address?tx_payment_id=$payment_id";
             $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
@@ -580,10 +589,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         $order = wc_get_order($order_id);
         
         if($this->is_virtual_in_cart($order_id) == true){
-            $order->update_status('completed', __('Payment has been received. Payment ID: ' . $payment_id, 'monero_gateway'));
+            $order->update_status('completed', __('Payment has been received.', 'monero_gateway'));
         }
         else{
-            $order->update_status('processing', __('Payment has been received. Payment ID: ' . $payment_id, 'monero_gateway')); // Show payment id used for order
+            $order->update_status('processing', __('Payment has been received.', 'monero_gateway')); // Show payment id used for order
         }
         global $wpdb;
         $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
