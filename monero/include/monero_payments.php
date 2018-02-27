@@ -589,10 +589,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         $order = wc_get_order($order_id);
         
         if($this->is_virtual_in_cart($order_id) == true){
-            $order->update_status('completed', __('Payment has been received. Payment ID: ' . $payment_id, 'monero_gateway'));
+            $order->update_status('completed', __('Payment has been received.', 'monero_gateway'));
         }
         else{
-            $order->update_status('processing', __('Payment has been received. Payment ID: ' . $payment_id, 'monero_gateway')); // Show payment id used for order
+            $order->update_status('processing', __('Payment has been received.', 'monero_gateway')); // Show payment id used for order
         }
         global $wpdb;
         $wpdb->query("DROP TABLE $payment_id"); // Drop the table from database after payment has been confirmed as it is no longer needed
