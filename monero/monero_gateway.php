@@ -56,7 +56,7 @@ function monero_create_menu()
         'manage_options',
         'admin.php?page=wc-settings&tab=checkout&section=monero_gateway',
         '',
-        plugins_url('monero/assets/icon.png'),
+        plugins_url('monero/assets/monero_icon.png'),
         56 // Position on menu, woocommerce has 55.5, products has 55.6
 
     );
