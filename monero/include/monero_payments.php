@@ -73,6 +73,11 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->monero_daemon = new Monero_Library($this->host, $this->port);
     }
 
+    public function get_icon()
+    {
+        return apply_filters('woocommerce_gateway_icon', "<img src='http://cdn.monerointegrations.com/logomonero.png' />");
+    }
+
     public function init_form_fields()
     {
         $this->form_fields = array(
