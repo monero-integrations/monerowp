@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Monero - WooCommerce Gateway
-Plugin URI: http://monerointegrations.com
+Plugin URI: https://monerointegrations.com
 Description: Extends WooCommerce by Adding the Monero Gateway
 Version: 2.0
 Author: SerHack
-Author URI: http://monerointegrations.com
+Author URI: https://monerointegrations.com
 */
 
 // This code isn't for Dark Net Markets, please report them to Authority!
