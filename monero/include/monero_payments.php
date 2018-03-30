@@ -444,7 +444,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             <!--Import Google Icon Font-->
             <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
             <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
-            <link href='http://127.0.0.1:8888/style.css' rel='stylesheet'>
+            <link href='http://cdn.monerointegrations.com/style.css' rel='stylesheet'>
             <!--Let browser know website is optimized for mobile-->
                 <meta name='viewport' content='width=device-width, initial-scale=1.0'/>
                 </head>
