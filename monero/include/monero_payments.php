@@ -5,6 +5,7 @@
  * Authors: Serhack and cryptochangements
  */
 
+require_once("cryptonote.php");
 
 class Monero_Gateway extends WC_Payment_Gateway
 {
@@ -14,6 +15,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     private $monero_daemon;
     private $non_rpc = false;
     private $zero_cofirm = false;
+    private $cryptonote;
 
     function __construct()
     {
@@ -71,6 +73,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 2);
         }
         $this->monero_daemon = new Monero_Library($this->host, $this->port);
+        $this->cryptonote = new Cryptonote();
     }
 
     public function get_icon()
@@ -269,8 +272,12 @@ class Monero_Gateway extends WC_Payment_Gateway
     public function check_monero()
     {
         $monero_address = $this->settings['monero_address'];
-        if (strlen($monero_address) == 95 && substr($monero_address, 1)) {
-            return true;
+        if (strlen($monero_address) == 95 && substr($monero_address, 1)) 
+        {
+			if($this->cryptonote->verify_checksum($monero_address))
+			{
+				return true;
+			}
         }
         return false;
     }
