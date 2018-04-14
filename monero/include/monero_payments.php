@@ -16,6 +16,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     private $non_rpc = false;
     private $zero_cofirm = false;
     private $cryptonote;
+    private $testnet = false;
 
     function __construct()
     {
@@ -41,6 +42,8 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->use_viewKey = $this->get_option('use_viewKey');
         $this->use_rpc = $this->get_option('use_rpc');
         
+        $env = $this->get_option('environment');
+        
         if($this->use_viewKey == 'yes')
         {
             $this->non_rpc = true;
@@ -53,6 +56,12 @@ class Monero_Gateway extends WC_Payment_Gateway
         {
             $this->zero_confirm = true;
         }
+        
+        if($env == 'yes')
+        {
+            $this->testnet = true;
+        }
+
         // After init_settings() is called, you can get the settings and load them into variables, e.g:
         // $this->title = $this->get_option('title' );
         $this->init_settings();
@@ -662,7 +671,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     }
     public function verify_non_rpc($payment_id, $amount, $order_id)
     {
-        $tools = new NodeTools();
+        $tools = new NodeTools($this->testnet);
         $bc_height = $tools->get_last_block_height();
 
         $block_difference = $this->last_block_seen($bc_height);
@@ -737,7 +746,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     
     public function verify_zero_conf($payment_id, $amount, $order_id)
     {
-        $tools = new NodeTools();
+        $tools = new NodeTools($this->testnet);
         $txs_from_mempool = $tools->get_mempool_txs();;
         $tx_count = count($txs_from_mempool['data']['txs']);
         $i = 0;
