@@ -327,11 +327,11 @@ class NodeTools
     {
       if(!testnet)
       {
-        $this->url = 'https://xmrchain.net'
+        $this->url = 'https://xmrchain.net';
       }
       if(testnet)
       {
-        $this->url = 'https://testnet.xmrchain.net'
+        $this->url = 'https://testnet.xmrchain.net';
       }
     }
     
