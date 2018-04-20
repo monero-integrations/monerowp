@@ -318,15 +318,22 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         $order = wc_get_order( $order_id );
         $items = $order->get_items();
-        
+        $cart_size = count($items);
+        $virtual_items = 0;
+	
         foreach ( $items as $item ) {
             $product = new WC_Product( $item['product_id'] );
             if ( $product->is_virtual() ) {
-                return true;
+                 $virtual_items += 1;
             }
         }
-        
-        return false;
+        if($virtual_items == $cart_size)
+        {
+	    return true;
+        }
+	else{
+            return false;
+	}
     }
     
     public function instruction($order_id)
