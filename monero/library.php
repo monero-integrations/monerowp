@@ -220,7 +220,7 @@ class Monero_Library
     }
 
     /* 
-     * The following functions can all be called to interact with the monero rpc wallet
+     * The following functions can all be called to interact with the Monero RPC wallet
      * They will majority of them will return the result as an array
      * Example: $daemon->address(); where $daemon is an instance of this class, will return the wallet address as string within an array
      */
@@ -266,7 +266,7 @@ class Monero_Library
     }
 
     /* A payment id can be passed as a string
-       A random payment id will be generatd if one is not given */
+       A random payment id will be generated if one is not given */
 
     public function split_integrated_address($integrated_address)
     {
