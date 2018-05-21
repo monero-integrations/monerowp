@@ -136,17 +136,17 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'title' => __('Use monero-wallet-rpc', 'monero_gateway'),
                 'label' => __(' Verify transactions with the monero-wallet-rpc ', 'monero_gateway'),
                 'type' => 'checkbox',
-                'description' => __('This must be setup seperatly', 'monero_gateway'),
+                'description' => __('This must be setup seperately', 'monero_gateway'),
                 'default' => 'no'
             ),
             'daemon_host' => array(
-                'title' => __('Monero wallet rpc Host/ IP', 'monero_gateway'),
+                'title' => __('Monero wallet RPC Host/ IP', 'monero_gateway'),
                 'type' => 'text',
                 'desc_tip' => __('This is the Daemon Host/IP to authorize the payment with port', 'monero_gateway'),
                 'default' => 'localhost',
             ),
             'daemon_port' => array(
-                'title' => __('Monero wallet rpc port', 'monero_gateway'),
+                'title' => __('Monero wallet RPC port', 'monero_gateway'),
                 'type' => 'text',
                 'desc_tip' => __('This is the Daemon Host/IP to authorize the payment with port', 'monero_gateway'),
                 'default' => '18080',
@@ -222,9 +222,9 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         $wallet_amount = $this->monero_daemon->getbalance();
         if (!isset($wallet_amount)) {
-            $this->log->add('Monero_gateway', '[ERROR] Can not connect to monero-wallet-rpc');
-            echo "</br>Your balance is: Not Avaliable </br>";
-            echo "Unlocked balance: Not Avaliable";
+            $this->log->add('Monero_gateway', '[ERROR] Cannot connect to monero-wallet-rpc');
+            echo "</br>Your balance is: Not Available </br>";
+            echo "Unlocked balance: Not Available";
         }
         else
         {
@@ -386,7 +386,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <body>
                 <!-- page container  -->
                 <div class='page-container'>
-                <!-- monero container payment box -->
+                <!-- Monero container payment box -->
                 <div class='container-xmr-payment'>
                 <!-- header -->
                 <div class='header-xmr-payment'>
@@ -419,7 +419,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 </div>
                 <!-- end footer xmr payment -->
                 </div>
-                <!-- end monero container payment box -->
+                <!-- end Monero container payment box -->
                 </div>
                 <!-- end page container  -->
                 </body>
@@ -467,7 +467,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <body>
                 <!-- page container  -->
                 <div class='page-container'>
-                <!-- monero container payment box -->
+                <!-- Monero container payment box -->
                 <div class='container-xmr-payment'>
                 <!-- header -->
                 <div class='header-xmr-payment'>
@@ -498,7 +498,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 </div>
                 <!-- end footer xmr payment -->
                 </div>
-                <!-- end monero container payment box -->
+                <!-- end Monero container payment box -->
                 </div>
                 <!-- end page container  -->
                 </body>
@@ -552,7 +552,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 $rounded_amount = round($final_amount, 12);
             } else {
                 $new_amount = $amount / $stored_rate_transformed;
-                $rounded_amount = round($new_amount, 12); //the moneo wallet can't handle decimals smaller than 0.000000000001
+                $rounded_amount = round($new_amount, 12); //the Monero wallet can't handle decimals smaller than 0.000000000001
             }
         } else // If the row has not been created then the live exchange rate will be grabbed and stored
         {
@@ -665,7 +665,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         return $message;
     }
-    public function last_block_seen($height) // sometimes 2 blocks are mined within a few seconds of eacher. Make sure we don't miss one
+    public function last_block_seen($height) // sometimes 2 blocks are mined within a few seconds of each other. Make sure we don't miss one
     {
         if (!isset($_COOKIE['last_seen_block']))
         {
@@ -810,7 +810,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 						</button></p></div>";
 
         } else {
-            $this->log->add('Monero_gateway', '[ERROR] Plugin can not reach wallet rpc.');
+            $this->log->add('Monero_gateway', '[ERROR] Plugin cannot reach wallet RPC.');
             echo "<div class=\" notice notice-error\"><p>Error with connection of daemon, see documentation!</p></div>";
         }
     }
