@@ -366,6 +366,22 @@ class NodeTools
         return $array['data']['txs'];
     }
     
+    public function get_outputs($address, $viewkey)
+    {
+        $curl = curl_init();
+        
+        curl_setopt_array($curl, array(
+                                       CURLOPT_RETURNTRANSFER => 1,
+                                       CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=0',
+                                       ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        
+        $array = json_decode($resp, true);
+        
+        return $array['data']['outputs'];
+    }
+    
     public function check_tx($tx_hash, $address, $viewKey)
     {
         $curl = curl_init();
