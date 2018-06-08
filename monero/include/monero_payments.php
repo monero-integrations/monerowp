@@ -343,7 +343,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             echo "<noscript><h1>You must enable javascript in order to confirm your order</h1></noscript>";
             $order = wc_get_order($order_id);
             $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
-            $payment_id = $this->set_paymentid_cookie(32);
+            $payment_id = $this->set_paymentid_cookie(8);
             $currency = $order->get_currency();
             $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
             $address = $this->address;
@@ -356,8 +356,14 @@ class Monero_Gateway extends WC_Payment_Gateway
                 // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
                 $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
             }
-            $uri = "monero:$address?tx_payment_id=$payment_id";
+            $decoded_address = $this->cryptonote->decode_address($address);
+            $pub_spendKey = $decoded_address['spendKey'];
+            $pub_viewKey = $decoded_address['viewKey'];
             
+            $integrated_addr = $this->cryptonote->integrated_addr_from_keys($pub_spendKey, $pub_viewKey, $payment_id);
+            
+            $uri = "monero:$address?tx_payment_id=$payment_id";
+                
             if($this->zero_confirm){
                 $this->verify_zero_conf($payment_id, $amount_xmr2, $order_id);
             }
@@ -366,7 +372,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
             if($this->confirmed == false)
             {
-                echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
+               echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
             }
             if($this->confirmed)
             {
@@ -375,7 +381,6 @@ class Monero_Gateway extends WC_Payment_Gateway
             
             echo "
             <head>
-            <p>*don't forget to include the payment ID in your transaction</p>
             <!--Import Google Icon Font-->
             <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
             <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
@@ -399,12 +404,10 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <div class='xmr-amount-send'>
                 <span class='xmr-label'>Send:</span>
                 <div class='xmr-amount-box'>".$amount_xmr2."</div>
-                <span class='xmr-label'>Payment ID:</span>
-                <div class='xmr-integrated-address-box'>".$payment_id."</div>
                 </div>
                 <div class='xmr-address'>
                 <span class='xmr-label'>To this address:</span>
-                <div class='xmr-address-box'>".$address."</div>
+                <div class='xmr-address-box'>".$integrated_addr."</div>
                 </div>
                 <div class='xmr-qr-code'>
                 <span class='xmr-label'>Or scan QR:</span>
