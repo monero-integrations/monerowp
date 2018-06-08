@@ -679,79 +679,34 @@ class Monero_Gateway extends WC_Payment_Gateway
             return $difference;
         }
     }
+    
     public function verify_non_rpc($payment_id, $amount, $order_id)
     {
         $tools = new NodeTools($this->testnet);
-        $bc_height = $tools->get_last_block_height();
-
-        $block_difference = $this->last_block_seen($bc_height);
         
-        $txs_from_block = $tools->get_txs_from_block($bc_height);
-        $tx_count = count($txs_from_block) - 1; // The tx at index 0 is a coinbase tx so it can be ignored
+        $amount_atomic_units = $amount * 1000000000000;
+            
+        $outputs = $tools->get_outputs($this->address, $this->viewKey);
+        $outs_count = count($outputs);
         
-        $output_found;
-        $block_index;
-        
-        if($block_difference != 0)
+        $i = 0;
+        $tx_hash;
+        if($outs_count != 0)
         {
-            if($block_difference >= 2){
-                $this->log->add('[WARNING] Block difference is greater or equal to 2');
-            }
-            
-            $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
-            $tx_count_2 = count($txs_from_block_2) - 1;
-            
-            $i = 1;
-            while($i <= $tx_count_2)
+            while($i < $outs_count )
             {
-                $tx_hash = $txs_from_block_2[$i]['tx_hash'];
-                if(strlen($txs_from_block_2[$i]['payment_id']) != 0)
+                if($outputs[$i]['payment_id'] == $payment_id)
                 {
-                    $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-                    if($result)
+                    if($outputs[$i]['amount'] >= $amount_atomic_units)
                     {
-                        $output_found = $result;
-                        $block_index = $i;
-                        $i = $tx_count_2; // finish loop
+                        $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+                        return true;
                     }
                 }
                 $i++;
             }
         }
-
-        $i = 1;
-        while($i <= $tx_count)
-        {
-            $tx_hash = $txs_from_block[$i]['tx_hash'];
-            if(strlen($txs_from_block[$i]['payment_id']) != 0)
-            {
-                $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-                if($result)
-                {
-                    $output_found = $result;
-                    $block_index = $i;
-                    $i = $tx_count; // finish loop
-                }
-            }
-            $i++;
-        }
-        
-        if(isset($output_found))
-        {
-            $amount_atomic_units = $amount * 1000000000000;
-            
-            if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
-            {
-                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
-            }
-            if($txs_from_block_2[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
-            {
-                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
-            }
-            
-            return true;
-        }
-            return false;
+        return false;
     }
     
     public function verify_zero_conf($payment_id, $amount, $order_id)
