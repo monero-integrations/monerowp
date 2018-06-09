@@ -366,14 +366,27 @@ class NodeTools
         return $array['data']['txs'];
     }
     
-    public function get_outputs($address, $viewkey)
+    public function get_outputs($address, $viewkey, $zero_conf = false)
     {
         $curl = curl_init();
         
-        curl_setopt_array($curl, array(
-                                       CURLOPT_RETURNTRANSFER => 1,
-                                       CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=0',
-                                       ));
+        if(!$zero_conf)
+        {
+            curl_setopt_array($curl, array(
+                                           CURLOPT_RETURNTRANSFER => 1,
+                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=0',
+                                           ));
+        }
+        
+        // also look in mempool if accepting zero confirmation transactions
+        if($zero_conf)
+        {
+            curl_setopt_array($curl, array(
+                                           CURLOPT_RETURNTRANSFER => 1,
+                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=1',
+                                           ));
+        }
+        
         $resp = curl_exec($curl);
         curl_close($curl);
         
