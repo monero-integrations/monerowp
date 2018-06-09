@@ -14,6 +14,9 @@ WordPress is the backend tool that is needed to use WooCommerce and this Monero 
 * [WooCommerce](https://woocommerce.com)
 This Monero plugin is an extension of WooCommerce, which works with WordPress
 
+* [BCMath](http://php.net/manual/en/book.bc.php)
+A PHP extension used for arbitrary precision maths
+
 ## Step 1: Activating the plugin
 * Downloading: First of all, you will need to download the plugin. You can download the latest release as a .zip file from https://github.com/monero-integrations/monerowp/releases If you wish, you can also download the latest source code from GitHub. This can be done with the command `git clone https://github.com/monero-integrations/monerowp.git` or can be downloaded as a zip file from the GitHub web page.
 
