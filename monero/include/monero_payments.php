@@ -38,6 +38,8 @@ class Monero_Gateway extends WC_Payment_Gateway
         $this->viewKey = $this->get_option('viewKey');
         $this->discount = $this->get_option('discount');
         $this->accept_zero_conf = $this->get_option('zero_conf');
+	    
+	$this->email_website = $this->get_option('email_website');
         
         $this->use_viewKey = $this->get_option('use_viewKey');
         $this->use_rpc = $this->get_option('use_rpc');
@@ -113,6 +115,12 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'default' => __('Pay securely using XMR.', 'monero_gateway')
 
             ),
+	    'email_website' => array(
+                'title' => __('Your email', 'monero_gateway'),
+                'type' => 'textarea',
+                'desc_tip' => __('When a payment is received, the payment gateway will send you an email notification!', 'monero_gateway'),
+                'default' => __('admin@localhost', 'monero_gateway')
+	    ),	
             'use_viewKey' => array(
                 'title' => __('Use ViewKey', 'monero_gateway'),
                 'label' => __(' Verify Transaction with ViewKey ', 'monero_gateway'),
@@ -615,6 +623,11 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         $message = "Payment has been received and confirmed. Thanks!";
         $this->log->add('Monero_gateway', '[SUCCESS] Payment has been recorded. Congratulations!');
+	$subject = "You have received a new Monero Payment. Congratulations!");
+	$body = "Dear Website Owner, you have received a new Monero Payment! Details below. Payment id used : $payment_id , 
+	order number : $order_id . Thank you for using Monero Payment Gateway");
+	$headers = array('Content-Type: text/html; charset=UTF-8');
+	wp_mail($email_website, $subject, $body, $headers);
         $this->confirmed = true;
         $order = wc_get_order($order_id);
         
