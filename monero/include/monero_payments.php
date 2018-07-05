@@ -356,16 +356,17 @@ class Monero_Gateway extends WC_Payment_Gateway
                 // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
                 $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
             }
+
+         
+         
             $decoded_address = $this->cryptonote->decode_address($address);
             $pub_spendKey = $decoded_address['spendKey'];
             $pub_viewKey = $decoded_address['viewKey'];
             
             $integrated_addr = $this->cryptonote->integrated_addr_from_keys($pub_spendKey, $pub_viewKey, $payment_id);
             
-            $uri = "monero:$address?tx_payment_id=$payment_id";
-                
+            $uri = urlencode("monero:".$address."?tx_amount=".$amount_xmr2."&tx_payment_id=".$payment_id);                
             $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id, $this->zero_confirm);
-
             if($this->confirmed == false)
             {
                echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
@@ -439,7 +440,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             $order->update_meta_data( "Amount requested (XMR)", $amount_xmr2);
             $order->save();
 
-            $uri = "monero:$address?tx_payment_id=$payment_id";
+            $uri = urlencode("monero:".$address."?tx_amount=".$amount_xmr2."&tx_payment_id=".$payment_id);
             $array_integrated_address = $this->monero_daemon->make_integrated_address($payment_id);
             if (!isset($array_integrated_address)) {
                 $this->log->add('Monero_Gateway', '[ERROR] Unable get integrated address');
