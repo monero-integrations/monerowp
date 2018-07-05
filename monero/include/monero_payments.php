@@ -77,8 +77,8 @@ class Monero_Gateway extends WC_Payment_Gateway
         if (is_admin()) {
             /* Save Settings */
             add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
-            add_filter('woocommerce_currencies', 'add_my_currency');
-            add_filter('woocommerce_currency_symbol', 'add_my_currency_symbol', 10, 2);
+            add_filter('woocommerce_currencies', array($this,'add_my_currency'));
+            add_filter('woocommerce_currency_symbol', array($this,'add_my_currency_symbol'), 10, 2);
             add_action('woocommerce_email_before_order_table', array($this, 'email_instructions'), 10, 2);
         }
         $this->monero_daemon = new Monero_Library($this->host, $this->port);
@@ -136,17 +136,17 @@ class Monero_Gateway extends WC_Payment_Gateway
                 'title' => __('Use monero-wallet-rpc', 'monero_gateway'),
                 'label' => __(' Verify transactions with the monero-wallet-rpc ', 'monero_gateway'),
                 'type' => 'checkbox',
-                'description' => __('This must be setup seperatly', 'monero_gateway'),
+                'description' => __('This must be setup seperately', 'monero_gateway'),
                 'default' => 'no'
             ),
             'daemon_host' => array(
-                'title' => __('Monero wallet rpc Host/ IP', 'monero_gateway'),
+                'title' => __('Monero wallet RPC Host/ IP', 'monero_gateway'),
                 'type' => 'text',
                 'desc_tip' => __('This is the Daemon Host/IP to authorize the payment with port', 'monero_gateway'),
                 'default' => 'localhost',
             ),
             'daemon_port' => array(
-                'title' => __('Monero wallet rpc port', 'monero_gateway'),
+                'title' => __('Monero wallet RPC port', 'monero_gateway'),
                 'type' => 'text',
                 'desc_tip' => __('This is the Daemon Host/IP to authorize the payment with port', 'monero_gateway'),
                 'default' => '18080',
@@ -190,7 +190,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         return $currencies;
     }
 
-    function add_my_currency_symbol($currency_symbol, $currency)
+    public function add_my_currency_symbol($currency_symbol, $currency)
     {
         switch ($currency) {
             case 'XMR':
@@ -222,9 +222,9 @@ class Monero_Gateway extends WC_Payment_Gateway
     {
         $wallet_amount = $this->monero_daemon->getbalance();
         if (!isset($wallet_amount)) {
-            $this->log->add('Monero_gateway', '[ERROR] Can not connect to monero-wallet-rpc');
-            echo "</br>Your balance is: Not Avaliable </br>";
-            echo "Unlocked balance: Not Avaliable";
+            $this->log->add('Monero_gateway', '[ERROR] Cannot connect to monero-wallet-rpc');
+            echo "</br>Your balance is: Not Available </br>";
+            echo "Unlocked balance: Not Available";
         }
         else
         {
@@ -343,7 +343,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             echo "<noscript><h1>You must enable javascript in order to confirm your order</h1></noscript>";
             $order = wc_get_order($order_id);
             $amount = floatval(preg_replace('#[^\d.]#', '', $order->get_total()));
-            $payment_id = $this->set_paymentid_cookie(32);
+            $payment_id = $this->set_paymentid_cookie(8);
             $currency = $order->get_currency();
             $amount_xmr2 = $this->changeto($amount, $currency, $payment_id);
             $address = $this->address;
@@ -356,16 +356,20 @@ class Monero_Gateway extends WC_Payment_Gateway
                 // If there isn't address (merchant missed that field!), $address will be the Monero address for donating :)
                 $address = "44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A";
             }
-            $uri = urlencode("monero:".$address."?tx_amount=".$amount_xmr2."&tx_payment_id=".$payment_id);
-            if($this->zero_confirm){
-                $this->verify_zero_conf($payment_id, $amount_xmr2, $order_id);
-            }
-            else{
-                $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id);
-            }
+
+         
+         
+            $decoded_address = $this->cryptonote->decode_address($address);
+            $pub_spendKey = $decoded_address['spendKey'];
+            $pub_viewKey = $decoded_address['viewKey'];
+            
+            $integrated_addr = $this->cryptonote->integrated_addr_from_keys($pub_spendKey, $pub_viewKey, $payment_id);
+            
+            $uri = urlencode("monero:".$address."?tx_amount=".$amount_xmr2."&tx_payment_id=".$payment_id);                
+            $this->verify_non_rpc($payment_id, $amount_xmr2, $order_id, $this->zero_confirm);
             if($this->confirmed == false)
             {
-                echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
+               echo "<h4><font color=DC143C> We are waiting for your transaction to be confirmed </font></h4>";
             }
             if($this->confirmed)
             {
@@ -374,7 +378,6 @@ class Monero_Gateway extends WC_Payment_Gateway
             
             echo "
             <head>
-            <p>*don't forget to include the payment ID in your transaction</p>
             <!--Import Google Icon Font-->
             <link href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet'>
             <link href='https://fonts.googleapis.com/css?family=Montserrat:400,800' rel='stylesheet'>
@@ -385,7 +388,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <body>
                 <!-- page container  -->
                 <div class='page-container'>
-                <!-- monero container payment box -->
+                <!-- Monero container payment box -->
                 <div class='container-xmr-payment'>
                 <!-- header -->
                 <div class='header-xmr-payment'>
@@ -398,12 +401,10 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <div class='xmr-amount-send'>
                 <span class='xmr-label'>Send:</span>
                 <div class='xmr-amount-box'>".$amount_xmr2."</div>
-                <span class='xmr-label'>Payment ID:</span>
-                <div class='xmr-integrated-address-box'>".$payment_id."</div>
                 </div>
                 <div class='xmr-address'>
                 <span class='xmr-label'>To this address:</span>
-                <div class='xmr-address-box'>".$address."</div>
+                <div class='xmr-address-box'>".$integrated_addr."</div>
                 </div>
                 <div class='xmr-qr-code'>
                 <span class='xmr-label'>Or scan QR:</span>
@@ -418,7 +419,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 </div>
                 <!-- end footer xmr payment -->
                 </div>
-                <!-- end monero container payment box -->
+                <!-- end Monero container payment box -->
                 </div>
                 <!-- end page container  -->
                 </body>
@@ -466,7 +467,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 <body>
                 <!-- page container  -->
                 <div class='page-container'>
-                <!-- monero container payment box -->
+                <!-- Monero container payment box -->
                 <div class='container-xmr-payment'>
                 <!-- header -->
                 <div class='header-xmr-payment'>
@@ -497,7 +498,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 </div>
                 <!-- end footer xmr payment -->
                 </div>
-                <!-- end monero container payment box -->
+                <!-- end Monero container payment box -->
                 </div>
                 <!-- end page container  -->
                 </body>
@@ -551,7 +552,7 @@ class Monero_Gateway extends WC_Payment_Gateway
                 $rounded_amount = round($final_amount, 12);
             } else {
                 $new_amount = $amount / $stored_rate_transformed;
-                $rounded_amount = round($new_amount, 12); //the moneo wallet can't handle decimals smaller than 0.000000000001
+                $rounded_amount = round($new_amount, 12); //the Monero wallet can't handle decimals smaller than 0.000000000001
             }
         } else // If the row has not been created then the live exchange rate will be grabbed and stored
         {
@@ -582,7 +583,8 @@ class Monero_Gateway extends WC_Payment_Gateway
 
     public function retriveprice($currency)
     {
-        $xmr_price = file_get_contents('https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC,USD,EUR,CAD,INR,GBP,COP,SGD&extraParams=monero_woocommerce');
+	$api_link = 'https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms=BTC,USD,EUR,CAD,INR,GBP,COP,SGD' . ',' . $currency . '&extraParams=monero_woocommerce';
+        $xmr_price = file_get_contents($api_link);
         $price = json_decode($xmr_price, TRUE);
         if (!isset($price)) {
             $this->log->add('Monero_Gateway', '[ERROR] Unable to get the price of Monero');
@@ -602,6 +604,8 @@ class Monero_Gateway extends WC_Payment_Gateway
                 return $price['COP'];
             case 'SGD':
                 return $price['SGD'];
+	    case $currency:
+		return $price[$currency];
             case 'XMR':
                 $price = '1';
                 return $price;
@@ -661,7 +665,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         return $message;
     }
-    public function last_block_seen($height) // sometimes 2 blocks are mined within a few seconds of eacher. Make sure we don't miss one
+    public function last_block_seen($height) // sometimes 2 blocks are mined within a few seconds of each other. Make sure we don't miss one
     {
         if (!isset($_COOKIE['last_seen_block']))
         {
@@ -675,115 +679,34 @@ class Monero_Gateway extends WC_Payment_Gateway
             return $difference;
         }
     }
-    public function verify_non_rpc($payment_id, $amount, $order_id)
+    
+    public function verify_non_rpc($payment_id, $amount, $order_id, $accept_zero_conf = false)
     {
         $tools = new NodeTools($this->testnet);
-        $bc_height = $tools->get_last_block_height();
-
-        $block_difference = $this->last_block_seen($bc_height);
+            
+        $amount_atomic_units = $amount * 1000000000000;
         
-        $txs_from_block = $tools->get_txs_from_block($bc_height);
-        $tx_count = count($txs_from_block) - 1; // The tx at index 0 is a coinbase tx so it can be ignored
+        $outputs = $tools->get_outputs($this->address, $this->viewKey, $accept_zero_conf);
+        $outs_count = count($outputs);
         
-        $output_found;
-        $block_index;
-        
-        if($block_difference != 0)
+        $i = 0;
+        $tx_hash;
+        if($outs_count != 0)
         {
-            if($block_difference >= 2){
-                $this->log->add('[WARNING] Block difference is greater or equal to 2');
-            }
-            
-            $txs_from_block_2 = $tools->get_txs_from_block($bc_height - 1);
-            $tx_count_2 = count($txs_from_block_2) - 1;
-            
-            $i = 1;
-            while($i <= $tx_count_2)
+            while($i < $outs_count )
             {
-                $tx_hash = $txs_from_block_2[$i]['tx_hash'];
-                if(strlen($txs_from_block_2[$i]['payment_id']) != 0)
+                if($outputs[$i]['payment_id'] == $payment_id)
                 {
-                    $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-                    if($result)
+                    if($outputs[$i]['amount'] >= $amount_atomic_units)
                     {
-                        $output_found = $result;
-                        $block_index = $i;
-                        $i = $tx_count_2; // finish loop
+                        $this->on_verified($payment_id, $amount_atomic_units, $order_id);
+                        return true;
                     }
                 }
                 $i++;
             }
         }
-
-        $i = 1;
-        while($i <= $tx_count)
-        {
-            $tx_hash = $txs_from_block[$i]['tx_hash'];
-            if(strlen($txs_from_block[$i]['payment_id']) != 0)
-            {
-                $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-                if($result)
-                {
-                    $output_found = $result;
-                    $block_index = $i;
-                    $i = $tx_count; // finish loop
-                }
-            }
-            $i++;
-        }
-        
-        if(isset($output_found))
-        {
-            $amount_atomic_units = $amount * 1000000000000;
-            
-            if($txs_from_block[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
-            {
-                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
-            }
-            if($txs_from_block_2[$block_index]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
-            {
-                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
-            }
-            
-            return true;
-        }
-            return false;
-    }
-    
-    public function verify_zero_conf($payment_id, $amount, $order_id)
-    {
-        $tools = new NodeTools($this->testnet);
-        $txs_from_mempool = $tools->get_mempool_txs();;
-        $tx_count = count($txs_from_mempool['data']['txs']);
-        $i = 0;
-        $output_found;
-        
-        while($i <= $tx_count)
-        {
-            $tx_hash = $txs_from_mempool['data']['txs'][$i]['tx_hash'];
-            if(strlen($txs_from_mempool['data']['txs'][$i]['payment_id']) != 0)
-            {
-                $result = $tools->check_tx($tx_hash, $this->address, $this->viewKey);
-                if($result)
-                {
-                    $output_found = $result;
-                    $tx_i = $i;
-                    $i = $tx_count; // finish loop
-                }
-            }
-            $i++;
-        }
-        if(isset($output_found))
-        {
-            $amount_atomic_units = $amount * 1000000000000;
-            if($txs_from_mempool['data']['txs'][$tx_i]['payment_id'] == $payment_id && $output_found['amount'] >= $amount_atomic_units)
-            {
-                $this->on_verified($payment_id, $amount_atomic_units, $order_id);
-            }
-            return true;
-        }
-        else
-            return false;
+        return false;
     }
 
     public function do_ssl_check()
@@ -806,7 +729,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 						</button></p></div>";
 
         } else {
-            $this->log->add('Monero_gateway', '[ERROR] Plugin can not reach wallet rpc.');
+            $this->log->add('Monero_gateway', '[ERROR] Plugin cannot reach wallet RPC.');
             echo "<div class=\" notice notice-error\"><p>Error with connection of daemon, see documentation!</p></div>";
         }
     }

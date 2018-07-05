@@ -220,7 +220,7 @@ class Monero_Library
     }
 
     /* 
-     * The following functions can all be called to interact with the monero rpc wallet
+     * The following functions can all be called to interact with the Monero RPC wallet
      * They will majority of them will return the result as an array
      * Example: $daemon->address(); where $daemon is an instance of this class, will return the wallet address as string within an array
      */
@@ -266,7 +266,7 @@ class Monero_Library
     }
 
     /* A payment id can be passed as a string
-       A random payment id will be generatd if one is not given */
+       A random payment id will be generated if one is not given */
 
     public function split_integrated_address($integrated_address)
     {
@@ -364,6 +364,35 @@ class NodeTools
         $array = json_decode($resp, true);
         
         return $array['data']['txs'];
+    }
+    
+    public function get_outputs($address, $viewkey, $zero_conf = false)
+    {
+        $curl = curl_init();
+        
+        if(!$zero_conf)
+        {
+            curl_setopt_array($curl, array(
+                                           CURLOPT_RETURNTRANSFER => 1,
+                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=0',
+                                           ));
+        }
+        
+        // also look in mempool if accepting zero confirmation transactions
+        if($zero_conf)
+        {
+            curl_setopt_array($curl, array(
+                                           CURLOPT_RETURNTRANSFER => 1,
+                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=1',
+                                           ));
+        }
+        
+        $resp = curl_exec($curl);
+        curl_close($curl);
+        
+        $array = json_decode($resp, true);
+        
+        return $array['data']['outputs'];
     }
     
     public function check_tx($tx_hash, $address, $viewKey)

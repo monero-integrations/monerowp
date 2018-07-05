@@ -21,12 +21,12 @@ An extension to WooCommerce for accepting Monero as payment in your store.
 * Add monero payments option to your existing online store with alternative main currency.
 * Flexible exchange rate calculations fully managed via administrative settings.
 * Zero fees and no commissions for monero payments processing from any third party.
-* Automatic conversion to Monero via realtime exchange rate feed and calculations.
+* Automatic conversion to Monero via real time exchange rate feed and calculations.
 * Ability to set exchange rate calculation multiplier to compensate for any possible losses due to bank conversions and funds transfer fees.
 
 == Installation ==
 
-1. Install "Monero WooCommerce extension" wordpress plugin just like any other Wordpress plugin.
+1. Install "Monero WooCommerce extension" WordPress plugin just like any other WordPress plugin.
 2. Activate
 3. Setup your monero-wallet-rpc with a view-only wallet
 4. Add your monero-wallet-rpc host address and Monero address in the settings panel
