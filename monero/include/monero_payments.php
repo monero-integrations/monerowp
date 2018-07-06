@@ -83,6 +83,18 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         $this->monero_daemon = new Monero_Library($this->host, $this->port);
         $this->cryptonote = new Cryptonote();
+	    
+	$this->supports = array( 'subscriptions', 'products' );
+	$this->supports = array( 
+               'products', 
+               'subscriptions',
+               'subscription_cancellation', 
+               'subscription_suspension', 
+               'subscription_reactivation',
+               'subscription_amount_changes',
+               'subscription_date_changes',
+               'subscription_payment_method_change'
+          );
     }
 
     public function get_icon()
