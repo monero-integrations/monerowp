@@ -30,6 +30,9 @@
  *
  * @link   http://ed25519.cr.yp.to/software.html Other ED25519 implementations this is referenced from
  */
+
+defined( 'ABSPATH' ) || exit;
+
 class ed25519
 {
     public $b;

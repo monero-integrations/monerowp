@@ -1,84 +1,107 @@
-# MoneroWP
-A WooCommerce extension for accepting Monero
+# Monero Gateway for WooCommerce
 
-## Dependencies
-This plugin is rather simple but there are a few things that need to be set up beforehand.
+## Features
 
-* A web server! Ideally with the most recent versions of PHP and mysql
+* Payment validation done through either `monero-wallet-rpc` or the [xmrchain.net blockchain explorer](https://xmrchain.net/).
+* Validates payments with `cron`, so does not require users to stay on the order confirmation page for their order to validate.
+* Order status updates are done through AJAX instead of Javascript page reloads.
+* Customers can pay with multiple transactions and are notified as soon as transactions hit the mempool.
+* Configurable block confirmations, from `0` for zero confirm to `60` for high ticket purchases.
+* Live price updates every minute; total amount due is locked in after the order is placed for a configurable amount of time (default 60 minutes) so the price does not change after order has been made.
+* Hooks into emails, order confirmation page, customer order history page, and admin order details page.
+* View all payments received to your wallet with links to the blockchain explorer and associated orders.
+* Optionally display all prices on your store in terms of Monero.
+* Shortcodes! Display exchange rates in numerous currencies.
 
-* A Monero wallet. You can find the official wallet [here](https://getmonero.org/downloads/)
+## Requirements
 
-* [WordPress](https://wordpress.org)
-WordPress is the backend tool that is needed to use WooCommerce and this Monero plugin
+* Monero wallet to receive payments - [GUI](https://github.com/monero-project/monero-gui/releases) - [CLI](https://github.com/monero-project/monero/releases) - [Paper](https://moneroaddress.org/)
+* [BCMath](http://php.net/manual/en/book.bc.php) - A PHP extension used for arbitrary precision maths
 
-* [WooCommerce](https://woocommerce.com)
-This Monero plugin is an extension of WooCommerce, which works with WordPress
+## Installing the plugin
 
-* [BCMath](http://php.net/manual/en/book.bc.php)
-A PHP extension used for arbitrary precision maths
+* Download the plugin from the [releases page](https://github.com/monero-integrations/monerowp) or clone with `git clone https://github.com/monero-integrations/monerowp`
+* Unzip or place the `monero-woocommerce-gateway` folder in the `wp-content/plugins` directory.
+* Activate "Monero Woocommerce Gateway" in your WordPress admin dashboard.
+* It is highly recommended that you use native cronjobs instead of WordPress's "Poor Man's Cron" by adding `define('DISABLE_WP_CRON', true);` into your `wp-config.php` file and adding `* * * * * wget -q -O - https://yourstore.com/wp-cron.php?doing_wp_cron >/dev/null 2>&1` to your crontab.
 
-## Step 1: Activating the plugin
-* Downloading: First of all, you will need to download the plugin. You can download the latest release as a .zip file from https://github.com/monero-integrations/monerowp/releases If you wish, you can also download the latest source code from GitHub. This can be done with the command `git clone https://github.com/monero-integrations/monerowp.git` or can be downloaded as a zip file from the GitHub web page.
+## Option 1: Use your wallet address and viewkey
 
-* Unzip the file monerowp_release.zip if you downloaded the zip from the releases page [here](https://github.com/monero-integrations/monerowp/releases).
+This is the easiest way to start accepting Monero on your website. You'll need:
 
-* Put the plugin in the correct directory: You will need to put the folder named `monero` from this repo/unzipped release into the WordPress plugins directory. This can be found at `path/to/wordpress/folder/wp-content/plugins`
+* Your Monero wallet address starting with `4`
+* Your wallet's secret viewkey
 
-* Activate the plugin from the WordPress admin panel: Once you login to the admin panel in WordPress, click on "Installed Plugins" under "Plugins". Then simply click "Activate" where it says "Monero - WooCommerce Gateway"
+Then simply select the `viewkey` option in the settings page and paste your address and viewkey. You're all set!
 
-## Step 2 Option 1: Use your wallet address and viewkey
+Note on privacy: when you validate transactions with your private viewkey, your viewkey is sent to (but not stored on) xmrchain.net over HTTPS. This could potentially allow an attacker to see your incoming, but not outgoing, transactions if they were to get his hands on your viewkey. Even if this were to happen, your funds would still be safe and it would be impossible for somebody to steal your money. For maximum privacy use your own `monero-wallet-rpc` instance.
 
-* Get your Monero wallet address starting with '4'
-* Get your wallet secret viewkey from your wallet
+## Option 2: Using `monero-wallet-rpc`
 
-A note on privacy: When you validate transactions with your private viewkey, your viewkey is sent to (but not stored on) xmrchain.net over HTTPS. This could potentially allow an attacker to see your incoming, but not outgoing, transactions if he were to get his hands on your viewkey. Even if this were to happen, your funds would still be safe and it would be impossible for somebody to steal your money. For maximum privacy use your own monero-wallet-rpc instance.
+The most secure way to accept Monero on your website. You'll need:
 
-## Step 2 Option 2: Get a Monero daemon to connect to
+* Root access to your webserver
+* Latest [Monero-currency binaries](https://github.com/monero-project/monero/releases)
 
-### Option 1: Running a full node yourself
+After downloading (or compiling) the Monero binaries on your server, install the [systemd unit files](https://github.com/monero-integrations/monerowp/tree/master/assets/systemd-unit-files) or run `monerod` and `monero-wallet-rpc` with `screen` or `tmux`. You can skip running `monerod` by using a remote node with `monero-wallet-rpc` by adding `--daemon-address node.moneroworld.com:18089` to the `monero-wallet-rpc.service` file.
 
-To do this: start the Monero daemon on your server and leave it running in the background. This can be accomplished by running `./monerod` inside your Monero downloads folder. The first time that you start your node, the Monero daemon will download and sync the entire Monero blockchain. This can take several hours and is best done on a machine with at least 4GB of ram, an SSD hard drive (with at least 40GB of free space), and a high speed internet connection.
+Note on security: using this option, while the most secure, requires you to run the Monero wallet RPC program on your server. Best practice for this is to use a view-only wallet since otherwise your server would be running a hot-wallet and a security breach could allow hackers to empty your funds.
 
-### Option 2: Connecting to a remote node
-The easiest way to find a remote node to connect to is to visit [moneroworld.com](https://moneroworld.com/#nodes) and use one of the nodes offered. It is probably easiest to use node.moneroworld.com:18089 which will automatically connect you to a random node.
+## Configuration
 
-### Setup your Monero wallet-rpc
+* `Enable / Disable` - Turn on or off Monero gateway. (Default: Disable)
+* `Title` - Name of the payment gateway as displayed to the customer. (Default: Monero Gateway)
+* `Discount for using Monero` - Percentage discount applied to orders for paying with Monero. Can also be negative to apply a surcharge. (Default: 0)
+* `Order valid time` - Number of seconds after order is placed that the transaction must be seen in the mempool. (Default: 3600 [1 hour])
+* `Number of confirmations` - Number of confirmations the transaction must recieve before the order is marked as complete. Use `0` for nearly instant confirmation. (Default: 5)
+* `Confirmation Type` - Confirm transactions with either your viewkey, or by using `monero-wallet-rpc`. (Default: viewkey)
+* `Monero Address` (if confirmation type is viewkey) - Your public Monero address starting with 4. (No default)
+* `Secret Viewkey` (if confirmation type is viewkey) - Your *private* viewkey (No default)
+* `Monero wallet RPC Host/IP` (if confirmation type is `monero-wallet-rpc`) - IP address where the wallet rpc is running. It is highly discouraged to run the wallet anywhere other than the local server! (Default: 127.0.0.1)
+* `Monero wallet RPC port` (if confirmation type is `monero-wallet-rpc`) - Port the wallet rpc is bound to with the `--rpc-bind-port` argument. (Default 18080)
+* `Testnet` - Check this to change the blockchain explorer links to the testnet explorer. (Default: unchecked)
+* `SSL warnings` - Check this to silence SSL warnings. (Default: unchecked)
+* `Show QR Code` - Show payment QR codes. There is no Monero software that can read QR codes at this time (Default: unchecked)
+* `Show Prices in Monero` - Convert all prices on the frontend to Monero. Experimental feature, only use if you do not accept any other payment option. (Default: unchecked)
+* `Display Decimals` (if show prices in Monero is enabled) - Number of decimals to round prices to on the frontend. The final order amount will not be rounded and will be displayed down to the nanoMonero. (Default: 12)
 
-* Setup a Monero wallet using the monero-wallet-cli tool. If you do not know how to do this you can learn about it at [getmonero.org](https://getmonero.org/resources/user-guides/monero-wallet-cli.html)
+## Shortcodes
 
-* [Create a view-only wallet from that wallet for security.](https://monero.stackexchange.com/questions/3178/how-to-create-a-view-only-wallet-for-the-gui/4582#4582)
+This plugin makes available two shortcodes that you can use in your theme.
 
-* Start the Wallet RPC and leave it running in the background. This can be accomplished by running `./monero-wallet-rpc --rpc-bind-port 18082 --disable-rpc-login --log-level 2 --wallet-file /path/viewOnlyWalletFile` where "/path/viewOnlyWalletFile" is the wallet file for your view-only wallet. If you wish to use a remote node you can add the `--daemon-address` flag followed by the address of the node. `--daemon-address node.moneroworld.com:18089` for example.
+#### Live price shortcode
 
-## Step 4: Setup Monero Gateway in WooCommerce
+This will display the price of Monero in the selected currency. If no currency is provided, the store's default currency will be used.
 
-* Navigate to the "settings" panel in the WooCommerce widget in the WordPress admin panel.
+```
+[monero-price]
+[monero-price currency="BTC"]
+[monero-price currency="USD"]
+[monero-price currency="CAD"]
+[monero-price currency="EUR"]
+[monero-price currency="GBP"]
+```
+Will display:
+```
+1 XMR = 123.68000 USD
+1 XMR = 0.01827000 BTC
+1 XMR = 123.68000 USD
+1 XMR = 168.43000 CAD
+1 XMR = 105.54000 EUR
+1 XMR = 94.84000 GBP
+```
 
-* Click on "Checkout"
 
-* Select "Monero GateWay"
+#### Monero accepted here badge
 
-* Check the box labeled "Enable this payment gateway"
+This will display a badge showing that you accept Monero-currency.
 
-* Check either "Use ViewKey" or "Use monero-wallet-rpc"
+`[monero-accepted-here]`
 
-If You chose to use viewkey:
+![Monero Accepted Here](/assets/images/monero-accepted-here.png?raw=true "Monero Accepted Here")
 
-* Enter your Monero wallet address in the box labeled "Monero Address". If you do not know your address, you can run the `address` command in your Monero wallet
+## Donations
 
-* Enter your secret viewkey in the box labeled "ViewKey"
+monero-integrations: 44krVcL6TPkANjpFwS2GWvg1kJhTrN7y9heVeQiDJ3rP8iGbCd5GeA4f3c2NKYHC1R4mCgnW7dsUUUae2m9GiNBGT4T8s2X
 
-If you chose to use monero-wallet-rpc:
-
-* Enter your Monero wallet address in the box labeled "Monero Address". If you do not know your address, you can run the `address` command in your Monero wallet
-
-* Enter the IP address of your server in the box labeled "Monero wallet RPC Host/IP"
-
-* Enter the port number of the Wallet RPC in the box labeled "Monero wallet RPC port" (will be `18082` if you used the above example).
-
-Finally:
-
-* Click on "Save changes"
-
-## Donating to the Devs :)
-XMR Address : `44krVcL6TPkANjpFwS2GWvg1kJhTrN7y9heVeQiDJ3rP8iGbCd5GeA4f3c2NKYHC1R4mCgnW7dsUUUae2m9GiNBGT4T8s2X`
+mosu-forge: 4A6BQp7do5MTxpCguq1kAS27yMLpbHcf89Ha2a8Shayt2vXkCr6QRpAXr1gLYRV5esfzoK3vLJTm5bDWk5gKmNrT6s6xZep

@@ -1,0 +1,78 @@
+#monero_payment_messages > span {
+    display:none;
+}
+.monero_details_row {
+    display: flex !important;
+    align-items: center;
+    margin:0 -8px;
+}
+.monero_details_row > * {
+    padding:0 8px;
+}
+.monero_details_left {
+}
+.monero_details_main {
+    flex-grow: 1;
+    word-break:break-all;
+}
+.monero_details_right.button-row {
+    display:flex;
+    margin-top: 5px;
+    align-self: self-start;
+}
+.monero_details_right.button-row button {
+    width: 32px;
+    height: 32px;
+    padding: 6px 2px;
+    margin: 0 4px;
+    line-height:28px;
+    text-align:center;
+}
+#monero_integrated_address {
+    line-height: 16px;
+}
+#monero_qr_code_container {
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    z-index:9999;
+    background:rgba(0,0,0,0.5);
+}
+#monero_qr_code {
+    position: absolute;
+    width: 256px;
+    height: 256px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: content-box;
+    padding: 20px;
+    background: white;
+    border-radius: 5px;
+}
+#monero_toast {
+    position: fixed;
+    z-index: 999;
+    top: 32px;
+    right: 12px;
+}
+#monero_toast > div {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    margin-top: 10px;
+    margin-right: 10px;
+    padding: 20px;
+    width: 300px;
+    border-radius: 3px;
+    color: white;
+    right: -400px;
+}
+#monero_toast > div.success {
+    background: rgba(68, 190, 117, 0.8);
+}
+#monero_toast > div.error {
+    background: rgba(195, 60, 60, 0.8);
+}

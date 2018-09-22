@@ -1,7 +1,6 @@
 <?php
-
 /**
- * library.php
+ * monero_wallet_rpc
  *
  * Written using the JSON RPC specification -
  * http://json-rpc.org/wiki/specification
@@ -9,10 +8,14 @@
  * @author Kacper Rowinski <krowinski@implix.com>
  * http://implix.com
  * Modified to work with monero-rpc wallet by Serhack and cryptochangements
+ * Modified to work with monero-wallet-rpc wallet by mosu-forge
  */
-class Monero_Library
+
+defined( 'ABSPATH' ) || exit;
+
+class Monero_Wallet_Rpc
 {
-    protected $url = null, $is_debug = false, $parameters_structure = 'array';
+    protected $url = null, $is_debug = false;
     protected $curl_options = array(
         CURLOPT_CONNECTTIMEOUT => 8,
         CURLOPT_TIMEOUT => 8
@@ -36,7 +39,7 @@ class Monero_Library
     {
         $this->validate(false === extension_loaded('curl'), 'The curl extension must be loaded to use this class!');
         $this->validate(false === extension_loaded('json'), 'The json extension must be loaded to use this class!');
-        
+
         $this->host = $pHost;
         $this->port = $pPort;
         $this->url = $pHost . ':' . $pPort . '/json_rpc';
@@ -45,7 +48,7 @@ class Monero_Library
     public function validate($pFailed, $pErrMsg)
     {
         if ($pFailed) {
-            echo $pErrMsg;
+            if(is_admin()) echo $pErrMsg;
         }
     }
 
@@ -55,25 +58,12 @@ class Monero_Library
         return $this;
     }
 
-    /*  public function setParametersStructure($pParametersStructure)
-      {
-          if (in_array($pParametersStructure, array('array', 'object')))
-          {
-              $this->parameters_structure = $pParametersStructure;
-          }
-          else
-          {
-              throw new UnexpectedValueException('Invalid parameters structure type.');
-          }
-          return $this;
-      } */
-
     public function setCurlOptions($pOptionsArray)
     {
         if (is_array($pOptionsArray)) {
             $this->curl_options = $pOptionsArray + $this->curl_options;
         } else {
-            echo 'Invalid options type.';
+            if(is_admin()) echo 'Invalid options type.';
         }
         return $this;
     }
@@ -81,13 +71,7 @@ class Monero_Library
     public function _print($json)
     {
         $json_encoded = json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        echo $json_encoded;
-    }
-
-    public function address()
-    {
-        $address = $this->_run('getaddress');
-        return $address;
+        if(is_admin()) echo $json_encoded;
     }
 
     public function _run($method, $params = null)
@@ -99,23 +83,29 @@ class Monero_Library
     private function request($pMethod, $pParams)
     {
         static $requestId = 0;
+
         // generating uniuqe id per process
         $requestId++;
+
         // check if given params are correct
         $this->validate(false === is_scalar($pMethod), 'Method name has no scalar value');
-        // $this->validate(false === is_array($pParams), 'Params must be given as array');
-        // send params as an object or an array
-        //$pParams = ($this->parameters_structure == 'object') ? $pParams[0] : array_values($pParams);
+
         // Request (method invocation)
         $request = json_encode(array('jsonrpc' => '2.0', 'method' => $pMethod, 'params' => $pParams, 'id' => $requestId));
+
         // if is_debug mode is true then add url and request to is_debug
         $this->debug('Url: ' . $this->url . "\r\n", false);
         $this->debug('Request: ' . $request . "\r\n", false);
+
+        // Response (method invocation)
         $responseMessage = $this->getResponse($request);
+
         // if is_debug mode is true then add response to is_debug and display it
         $this->debug('Response: ' . $responseMessage . "\r\n", true);
+
         // decode and create array ( can be object, just set to false )
         $responseDecoded = json_decode($responseMessage, true);
+
         // check if decoding json generated any errors
         $jsonErrorMsg = $this->getJsonLastErrorMsg();
         $this->validate(!is_null($jsonErrorMsg), $jsonErrorMsg . ': ' . $responseMessage);
@@ -149,7 +139,7 @@ class Monero_Library
             $endTime = array_sum(explode(' ', microtime()));
             // performance summary
             $debug .= 'Request time: ' . round($endTime - $startTime, 3) . ' s Memory usage: ' . round(memory_get_usage() / 1024) . " kb\r\n";
-            echo nl2br($debug);
+            if(is_admin()) echo nl2br($debug);
             // send output immediately
             flush();
             // clean static
@@ -177,14 +167,18 @@ class Monero_Library
         }
         // send the request
         $response = curl_exec($ch);
+
         // check http status code
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if (isset($this->httpErrors[$httpCode])) {
-            echo 'Response Http Error - ' . $this->httpErrors[$httpCode];
+            if(is_admin())
+                echo 'Response Http Error - ' . $this->httpErrors[$httpCode];
         }
+
         // check for curl error
         if (0 < curl_errno($ch)) {
-           echo '[ERROR] Failed to connect to monero-wallet-rpc at ' . $this->host . ' port '. $this->port .'</br>';
+            if(is_admin())
+                echo '[ERROR] Failed to connect to monero-wallet-rpc at ' . $this->host . ' port '. $this->port .'</br>';
         }
         // close the connection
         curl_close($ch);
@@ -219,11 +213,17 @@ class Monero_Library
         }
     }
 
-    /* 
+    /*
      * The following functions can all be called to interact with the Monero RPC wallet
      * They will majority of them will return the result as an array
      * Example: $daemon->address(); where $daemon is an instance of this class, will return the wallet address as string within an array
      */
+
+    public function address()
+    {
+        $address = $this->_run('getaddress');
+        return $address;
+    }
 
     public function getbalance()
     {
@@ -234,7 +234,7 @@ class Monero_Library
     public function getheight()
     {
         $height = $this->_run('getheight');
-        return $height;
+        return $height['height'];
     }
 
     public function incoming_transfer($type)
@@ -271,7 +271,7 @@ class Monero_Library
     public function split_integrated_address($integrated_address)
     {
         if (!isset($integrated_address)) {
-            echo "Error: Integrated_Address mustn't be null";
+            if(is_admin()) echo "Error: Integrated_Address must not be null";
         } else {
             $split_params = array('integrated_address' => $integrated_address);
             $split_methods = $this->_run('split_integrated_address', $split_params);
@@ -281,8 +281,8 @@ class Monero_Library
 
     public function make_uri($address, $amount, $recipient_name = null, $description = null)
     {
-        // If I pass 1, it will be 0.0000001 xmr. Then
-        $new_amount = $amount * 100000000;
+        // Convert to atomic units
+        $new_amount = $amount * MONERO_GATEWAY_ATOMIC_UNITS_POW;
 
         $uri_params = array('address' => $address, 'amount' => $new_amount, 'payment_id' => '', 'recipient_name' => $recipient_name, 'tx_description' => $description);
         $uri = $this->_run('make_uri', $uri_params);
@@ -296,9 +296,9 @@ class Monero_Library
         return $parsed_uri;
     }
 
-    public function transfer($amount, $address, $mixin = 4)
+    public function transfer($amount, $address, $mixin = 12)
     {
-        $new_amount = $amount * 1000000000000;
+        $new_amount = $amount * MONERO_GATEWAY_ATOMIC_UNITS_POW;
         $destinations = array('amount' => $new_amount, 'address' => $address);
         $transfer_parameters = array('destinations' => array($destinations), 'mixin' => $mixin, 'get_tx_key' => true, 'unlock_time' => 0, 'payment_id' => '');
         $transfer_method = $this->_run('transfer', $transfer_parameters);
@@ -309,7 +309,38 @@ class Monero_Library
     {
         $get_payments_parameters = array('payment_id' => $payment_id);
         $get_payments = $this->_run('get_payments', $get_payments_parameters);
-        return $get_payments;
+        if(isset($get_payments['payments']))
+            return $get_payments['payments'];
+        else
+            return array();
+    }
+
+    public function get_pool_payments($payment_id)
+    {
+        $get_payments_parameters = array('pool' => true);
+        $get_payments = $this->_run('get_transfers', $get_payments_parameters);
+
+        if(!isset($get_payments['pool']))
+            return array();
+
+        $payments = array();
+        foreach($get_payments['pool'] as $payment) {
+            if($payment['double_spend_seen'])continue;
+            if($payment['payment_id'] == $payment_id) {
+                $payment['tx_hash'] = $payment['txid'];
+                $payment['block_height'] = $payment['height'];
+                $payments[] = $payment;
+            }
+        }
+
+        return $payments;
+    }
+
+    public function get_all_payments($payment_id)
+    {
+        $confirmed_payments = $this->get_payments($payment_id);
+        $pool_payments = $this->get_pool_payments($payment_id);
+        return array_merge($pool_payments, $confirmed_payments);
     }
 
     public function get_bulk_payments($payment_id, $min_block_height)
@@ -318,119 +349,4 @@ class Monero_Library
         $get_bulk_payments = $this->_run('get_bulk_payments', $get_bulk_payments_parameters);
         return $get_bulk_payments;
     }
-}
-    
-class NodeTools
-{
-    private $url;
-    public function __construct($testnet = false)
-    {
-      if(!testnet)
-      {
-        $this->url = 'https://xmrchain.net';
-      }
-      if(testnet)
-      {
-        $this->url = 'https://testnet.xmrchain.net';
-      }
-    }
-    
-    public function get_last_block_height()
-    {
-        $curl = curl_init();
-        
-        curl_setopt_array($curl, array(
-                                       CURLOPT_RETURNTRANSFER => 1,
-                                       CURLOPT_URL => $this->url . 'api/networkinfo',
-                                       ));
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        
-        $array = json_decode($resp, true);
-        return $array['data']['height'] - 1;
-    }
-    
-    public function get_txs_from_block($height)
-    {
-        $curl = curl_init();
-        
-        curl_setopt_array($curl, array(
-                                       CURLOPT_RETURNTRANSFER => 1,
-                                       CURLOPT_URL => $this->url . '/api/search/' . $height,
-                                       ));
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        
-        $array = json_decode($resp, true);
-        
-        return $array['data']['txs'];
-    }
-    
-    public function get_outputs($address, $viewkey, $zero_conf = false)
-    {
-        $curl = curl_init();
-        
-        if(!$zero_conf)
-        {
-            curl_setopt_array($curl, array(
-                                           CURLOPT_RETURNTRANSFER => 1,
-                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=0',
-                                           ));
-        }
-        
-        // also look in mempool if accepting zero confirmation transactions
-        if($zero_conf)
-        {
-            curl_setopt_array($curl, array(
-                                           CURLOPT_RETURNTRANSFER => 1,
-                                           CURLOPT_URL => $this->url . '/api/outputsblocks?address=' . $address . '&viewkey=' . $viewkey . '&limit=5&mempool=1',
-                                           ));
-        }
-        
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        
-        $array = json_decode($resp, true);
-        
-        return $array['data']['outputs'];
-    }
-    
-    public function check_tx($tx_hash, $address, $viewKey)
-    {
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-                                       CURLOPT_RETURNTRANSFER => 1,
-                                       CURLOPT_URL => $this-url . '/api/outputs?txhash=' .$tx_hash . '&address='. $address . '&viewkey='. $viewKey .'&txprove=0',
-                                       ));
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        $array = json_decode($resp, true);
-        $output_count = count($array['data']['outputs']);
-        $i = 0;
-        while($i < $output_count)
-        {
-            if($array['data']['outputs'][$i]['match'])
-            {
-                return $array['data']['outputs'][$i];
-            }
-            
-            $i++;
-        }
-        
-    }
-    
-    function get_mempool_txs()
-    {
-        $curl = curl_init();
-        
-        curl_setopt_array($curl, array(
-                                       CURLOPT_RETURNTRANSFER => 1,
-                                       CURLOPT_URL => $this->url . '/api/mempool',
-                                       ));
-        $resp = curl_exec($curl);
-        curl_close($curl);
-        $array = json_decode($resp, true);
-        return $array;
-    }
-    
 }

@@ -1,0 +1,14 @@
+[Unit]
+Description=Monero Full Node
+After=network.target
+
+[Service]
+User=moneroservices
+Group=moneroservices
+WorkingDirectory=/opt/monero-data-dir
+Type=simple
+LimitNOFILE=65535
+ExecStart=/usr/bin/monerod --log-file /var/log/monerod.log --data-dir /opt/monero-data-dir --non-interactive
+Restart=always
+[Install]
+WantedBy=multi-user.target
