@@ -1,9 +1,9 @@
 === Monero WooCommerce Extension ===
-Contributors: serhack
+Contributors: serhack, mosu-forge
 Donate link: http://monerointegrations.com/donate.html
 Tags: monero, woocommerce, integration, payment, merchant, cryptocurrency, accept monero, monero woocommerce
 Requires at least: 4.0
-Tested up to: 4.8
+Tested up to: 4.9.8
 Stable tag: trunk
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -49,6 +49,9 @@ An extension to WooCommerce for accepting Monero as payment in your store.
 
 = 0.2 =
 * Bug fixes
+
+= 0.3 =
+* Complete rewrite of how the plugin handles payments
 
 == Upgrade Notice ==
 

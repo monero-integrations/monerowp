@@ -1,0 +1,14 @@
+[Unit]
+Description=Monero Wallet RPC
+After=network.target monerod.service
+
+[Service]
+User=moneroservices
+Group=moneroservices
+WorkingDirectory=/opt/monero-wallets
+Type=simple
+ExecStart=/opt/monero-bin/monero-wallet-rpc --wallet-file /opt/monero-wallets/woocommerce --rpc-bind-port 18080 --password-file /opt/monero-wallets/woocommerce.password --disable-rpc-login --log-file /var/log/monero-wallet.log
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
