@@ -61,7 +61,7 @@ Note on security: using this option, while the most secure, requires you to run 
 * `Monero wallet RPC port` (if confirmation type is `monero-wallet-rpc`) - Port the wallet rpc is bound to with the `--rpc-bind-port` argument. (Default 18080)
 * `Testnet` - Check this to change the blockchain explorer links to the testnet explorer. (Default: unchecked)
 * `SSL warnings` - Check this to silence SSL warnings. (Default: unchecked)
-* `Show QR Code` - Show payment QR codes. There is no Monero software that can read QR codes at this time (Default: unchecked)
+* `Show QR Code` - Show payment QR codes. (Default: unchecked)
 * `Show Prices in Monero` - Convert all prices on the frontend to Monero. Experimental feature, only use if you do not accept any other payment option. (Default: unchecked)
 * `Display Decimals` (if show prices in Monero is enabled) - Number of decimals to round prices to on the frontend. The final order amount will not be rounded and will be displayed down to the nanoMonero. (Default: 12)
 
