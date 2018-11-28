@@ -1,5 +1,5 @@
 === Monero WooCommerce Extension ===
-Contributors: Monero Integrations Team
+Contributors: Monero Integrations Team, Ryo Currency Project
 Donate link: http://monerointegrations.com/donate.html
 Tags: monero, woocommerce, integration, payment, merchant, cryptocurrency, accept monero, monero woocommerce
 Requires at least: 4.0
