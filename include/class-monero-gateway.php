@@ -42,7 +42,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 
     public function get_icon()
     {
-        return apply_filters('woocommerce_gateway_icon', '<img src="'.MONERO_GATEWAY_PLUGIN_URL.'assets/images/monero-icon.png"/>');
+        return apply_filters('woocommerce_gateway_icon', '<img src="'.MONERO_GATEWAY_PLUGIN_URL.'assets/images/monero-icon.png"/>', $this->id);
     }
 
     function __construct($add_action=true)
