@@ -209,7 +209,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 
         $order = wc_get_order($order_id);
 
-        if(self::$confirm_type != 'wownero-wallet-rpc') {
+        if(self::$confirm_type != 'monero-wallet-rpc') {
           // Generate a unique payment id
           do {
               $payment_id = bin2hex(openssl_random_pseudo_bytes(8));
@@ -219,12 +219,12 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
         else {
           // Generate subaddress
-          $payment_id = self::$wownero_wallet_rpc->create_address(0, 'Order: ' . $order_id);
+          $payment_id = self::$monero_wallet_rpc->create_address(0, 'Order: ' . $order_id);
           if(isset($payment_id['address'])) {
             $payment_id = $payment_id['address'];
           }
           else {
-            $this->log->add('Wownero_Gateway', 'Couldn\'t create subaddress for order ' . $order_id);
+            $this->log->add('Monero_Gateway', 'Couldn\'t create subaddress for order ' . $order_id);
           }
         }
 
@@ -404,15 +404,15 @@ class Monero_Gateway extends WC_Payment_Gateway
     protected static function check_payment_rpc($payment_id)
     {
         $txs = array();
-        $address_index = self::$wownero_wallet_rpc->get_address_index($payment_id);
+        $address_index = self::$monero_wallet_rpc->get_address_index($payment_id);
         if(isset($address_index['index']['minor'])){
           $address_index = $address_index['index']['minor'];
         }
         else {
-          self::$log->add('Wownero_Gateway', '[ERROR] Couldn\'t get address index of subaddress: ' . $payment_id);
+          self::$log->add('Monero_Gateway', '[ERROR] Couldn\'t get address index of subaddress: ' . $payment_id);
           return $txs;
         }
-        $payments = self::$wownero_wallet_rpc->get_transfers(array( 'in' => true, 'pool' => true, 'subaddr_indices' => array($address_index)));
+        $payments = self::$monero_wallet_rpc->get_transfers(array( 'in' => true, 'pool' => true, 'subaddr_indices' => array($address_index)));
         if(isset($payments['in'])) {
           foreach($payments['in'] as $payment) {
               $txs[] = array(
