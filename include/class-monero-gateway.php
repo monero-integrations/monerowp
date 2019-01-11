@@ -404,13 +404,32 @@ class Monero_Gateway extends WC_Payment_Gateway
     protected static function check_payment_rpc($payment_id)
     {
         $txs = array();
-        $payments = self::$monero_wallet_rpc->get_all_payments($payment_id);
-        foreach($payments as $payment) {
-            $txs[] = array(
-                'amount' => $payment['amount'],
-                'txid' => $payment['tx_hash'],
-                'height' => $payment['block_height']
-            );
+        $address_index = self::$wownero_wallet_rpc->get_address_index($payment_id);
+        if(isset($address_index['index']['minor'])){
+          $address_index = $address_index['index']['minor'];
+        }
+        else {
+          self::$log->add('Wownero_Gateway', '[ERROR] Couldn\'t get address index of subaddress: ' . $payment_id);
+          return $txs;
+        }
+        $payments = self::$wownero_wallet_rpc->get_transfers(array( 'in' => true, 'pool' => true, 'subaddr_indices' => array($address_index)));
+        if(isset($payments['in'])) {
+          foreach($payments['in'] as $payment) {
+              $txs[] = array(
+                  'amount' => $payment['amount'],
+                  'txid' => $payment['txid'],
+                  'height' => $payment['height']
+              );
+          }
+        }
+        if(isset($payments['pool'])) {
+          foreach($payments['pool'] as $payment) {
+              $txs[] = array(
+                  'amount' => $payment['amount'],
+                  'txid' => $payment['txid'],
+                  'height' => $payment['height']
+              );
+          }
         }
         return $txs;
     }
