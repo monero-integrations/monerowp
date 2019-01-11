@@ -244,13 +244,6 @@ class Monero_Wallet_Rpc
         return $incoming_transfers;
     }
 
-    public function get_transfers($input_type, $input_value)
-    {
-        $get_parameters = array($input_type => $input_value);
-        $get_transfers = $this->_run('get_transfers', $get_parameters);
-        return $get_transfers;
-    }
-
     public function view_key()
     {
         $query_key = array('key_type' => 'view_key');
