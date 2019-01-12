@@ -401,15 +401,15 @@ class Monero_Gateway extends WC_Payment_Gateway
         }
     }
 
-    protected static function check_payment_rpc($payment_id)
+    protected static function check_payment_rpc($subaddress)
     {
         $txs = array();
-        $address_index = self::$monero_wallet_rpc->get_address_index($payment_id);
+        $address_index = self::$monero_wallet_rpc->get_address_index($subaddress);
         if(isset($address_index['index']['minor'])){
           $address_index = $address_index['index']['minor'];
         }
         else {
-          self::$log->add('Monero_Gateway', '[ERROR] Couldn\'t get address index of subaddress: ' . $payment_id);
+          self::$log->add('Monero_Gateway', '[ERROR] Couldn\'t get address index of subaddress: ' . $subaddress);
           return $txs;
         }
         $payments = self::$monero_wallet_rpc->get_transfers(array( 'in' => true, 'pool' => true, 'subaddr_indices' => array($address_index)));
