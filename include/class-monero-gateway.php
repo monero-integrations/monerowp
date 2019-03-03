@@ -588,7 +588,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $order_id = preg_replace("/[^0-9]+/", "", $_GET['order_id']);
         $order = wc_get_order( $order_id );
 
-        if($order->user_id != $user->ID)
+        if($order->user_id() != $user->ID)
             self::ajax_output(array('error' => '[ERROR] Order does not belong to this user'));
 
         if($order->get_payment_method() != self::$_id)
