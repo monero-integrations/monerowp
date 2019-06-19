@@ -3,7 +3,7 @@
 Plugin Name: Monero Woocommerce Gateway
 Plugin URI: https://github.com/monero-integrations/monerowp
 Description: Extends WooCommerce by adding a Monero Gateway
-Version: 3.0.0
+Version: 3.0.1
 Tested up to: 4.9.8
 Author: mosu-forge, SerHack
 Author URI: https://monerointegrations.com/
