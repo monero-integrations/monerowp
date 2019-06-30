@@ -1,7 +1,7 @@
 <?php
 /*
  * Main Gateway of Monero using either a local daemon or the explorer
- * Authors: Serhack, cryptochangements, mosu-forge
+ * Authors: SerHack, cryptochangements, mosu-forge
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -279,6 +279,9 @@ class Monero_Gateway extends WC_Payment_Gateway
                 $query = $wpdb->prepare("INSERT INTO $table_name (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array($currency, $rate, $rate));
                 $wpdb->query($query);
             }
+        }
+        else{
+             self::$log->add('Monero_Payments', "[ERROR] Unable to fetch prices from cryptocompare.com.");
         }
 
         // Get current network/wallet height
