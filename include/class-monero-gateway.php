@@ -87,6 +87,10 @@ class Monero_Gateway extends WC_Payment_Gateway
         $explorer_url = self::$testnet ? MONERO_GATEWAY_TESTNET_EXPLORER_URL : MONERO_GATEWAY_MAINNET_EXPLORER_URL;
         defined('MONERO_GATEWAY_EXPLORER_URL') || define('MONERO_GATEWAY_EXPLORER_URL', $explorer_url);
 
+        // Add the currency of the shop to $currencies array. Needed for do_update_event() function
+        $currency_shop = get_woocommerce_currency();
+		array_push(self::$currencies, $currency_shop);
+        
         if($add_action)
             add_action('woocommerce_update_options_payment_gateways_'.$this->id, array($this, 'process_admin_options'));
 
