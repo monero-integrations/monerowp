@@ -265,7 +265,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 
         // Get Live Price
         $currencies = implode(',', self::$currencies);
-        $api_link = 'https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms='.$currencies.'&extraParams=monero_woocommerce';
+        $api_link = 'https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies='.$currencies;
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
@@ -275,9 +275,9 @@ class Monero_Gateway extends WC_Payment_Gateway
         curl_close($curl);
         $price = json_decode($resp, true);
 
-        if(!isset($price['Response']) || $price['Response'] != 'Error') {
+        if(isset($price)) {
             $table_name = $wpdb->prefix.'monero_gateway_live_rates';
-            foreach($price as $currency=>$rate) {
+            foreach($price['monero'] as $currency=>$rate) {
                 // shift decimal eight places for precise int storage
                 $rate = intval($rate * 1e8);
                 $query = $wpdb->prepare("INSERT INTO $table_name (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array($currency, $rate, $rate));
@@ -285,7 +285,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
         }
         else{
-             self::$log->add('Monero_Payments', "[ERROR] Unable to fetch prices from cryptocompare.com.");
+             self::$log->add('Monero_Payments', "[ERROR] Unable to fetch prices from coingecko.com.");
         }
 
         // Get current network/wallet height
