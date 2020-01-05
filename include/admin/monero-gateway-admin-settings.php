@@ -84,6 +84,12 @@ return array(
         'description' => __('Advanced usage only', 'monero_gateway'),
         'default' => 'no'
     ),
+    'javascript' => array(
+        'title' => __(' Javascript', 'monero_gateway'),
+        'label' => __(' Check this to ENABLE Javascript in Checkout page ', 'monero_gateway'),
+        'type' => 'checkbox',
+        'default' => 'no'
+     ),
     'onion_service' => array(
         'title' => __(' SSL warnings ', 'monero_gateway'),
         'label' => __(' Check to Silence SSL warnings', 'monero_gateway'),
