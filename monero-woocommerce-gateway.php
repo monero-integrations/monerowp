@@ -209,7 +209,7 @@ function monero_install() {
     if($wpdb->get_var("show tables like '$table_name'") != $table_name) {
         $sql = "CREATE TABLE $table_name (
                order_id BIGINT(20) UNSIGNED NOT NULL,
-               payment_id VARCHAR(94) DEFAULT '' NOT NULL,
+               payment_id VARCHAR(95) DEFAULT '' NOT NULL,
                currency VARCHAR(6) DEFAULT '' NOT NULL,
                rate BIGINT UNSIGNED DEFAULT 0 NOT NULL,
                amount BIGINT UNSIGNED DEFAULT 0 NOT NULL,
@@ -226,7 +226,7 @@ function monero_install() {
     if($wpdb->get_var("show tables like '$table_name'") != $table_name) {
         $sql = "CREATE TABLE $table_name (
                id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
-               payment_id VARCHAR(94) DEFAULT '' NOT NULL,
+               payment_id VARCHAR(95) DEFAULT '' NOT NULL,
                txid VARCHAR(64) DEFAULT '' NOT NULL,
                amount BIGINT UNSIGNED DEFAULT 0 NOT NULL,
                height MEDIUMINT UNSIGNED NOT NULL DEFAULT 0,
