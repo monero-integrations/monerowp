@@ -19,6 +19,7 @@ class Monero_Explorer_Tools
     public function __construct($testnet = false)
     {
         $this->url = $testnet ? MONERO_GATEWAY_TESTNET_EXPLORER_URL : MONERO_GATEWAY_MAINNET_EXPLORER_URL;
+        $this->url = preg_replace("/\/+$/", "", $this->url);
     }
 
     private function call_api($endpoint)
