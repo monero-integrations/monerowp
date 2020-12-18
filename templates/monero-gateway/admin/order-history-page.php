@@ -72,7 +72,7 @@
     <?php foreach($details['txs'] as $tx): ?>
     <tr>
         <td>
-            <a href="<?php echo MONERO_GATEWAY_EXPLORER_URL.'/tx/'.$tx['txid']; ?>" target="_blank"><?php echo $tx['txid']; ?></a>
+            <a href="<?php echo MONERO_GATEWAY_EXPLORER_URL.'tx/'.$tx['txid']; ?>" target="_blank"><?php echo $tx['txid']; ?></a>
         </td>
         <td><?php echo $tx['height']; ?></td>
         <td><?php echo sprintf(MONERO_GATEWAY_ATOMIC_UNITS_SPRINTF, $tx['amount'] / MONERO_GATEWAY_ATOMIC_UNITS_POW); ?> XMR</td>
