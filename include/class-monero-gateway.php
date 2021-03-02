@@ -552,7 +552,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
 
             $amount_formatted = self::format_monero($amount_due);
-            $qrcode_uri = 'monero:'.$address.'?tx_amount='.$amount_formatted.'&tx_payment_id='.$payment_id;
+            $qrcode_uri = 'monero:'.$integrated_addr.'?tx_amount='.$amount_formatted.'&tx_payment_id='.$payment_id;
             $my_order_url = wc_get_endpoint_url('view-order', $order_id, wc_get_page_permalink('myaccount'));
 
             $payment_details = array(
