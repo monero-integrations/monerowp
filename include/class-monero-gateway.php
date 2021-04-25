@@ -228,15 +228,25 @@ class Monero_Gateway extends WC_Payment_Gateway
             $payment_id = $payment_id['address'];
           }
           else {
-            $this->log->add('Monero_Gateway', 'Couldn\'t create subaddress for order ' . $order_id);
+            self::$log->add('Monero_Gateway', 'Couldn\'t create subaddress for order ' . $order_id);
           }
         }
 
         $currency = $order->get_currency();
         $rate = self::get_live_rate($currency);
         $fiat_amount = $order->get_total('');
-        $monero_amount = 1e8 * $fiat_amount / $rate;
-
+        
+        if($rate != 0)
+            $monero_amount = 1e8 * $fiat_amount / $rate;
+        else{
+            // Critical, the price has not been retrivied.
+            $monero_amount = -1;
+            $error_message = "The price for Monero could not be retrieved. Please contact the merchant.";
+            self::$log->add('Monero_Payments', "[ERROR] Impossible to retrieve price for order: ".$order_id);
+            wc_add_notice( __('Payment error:', 'woothemes') . $error_message, 'error' );
+            return;
+        }
+        
         if(self::$discount)
             $monero_amount = $monero_amount - $monero_amount * self::$discount / 100;
 
@@ -246,7 +256,7 @@ class Monero_Gateway extends WC_Payment_Gateway
         $wpdb->query($query);
 
         $order->update_status('on-hold', __('Awaiting offline payment', 'monero_gateway'));
-        $order->reduce_order_stock(); // Reduce stock levels
+        wc_reduce_stock_levels(  $order_id ); 
         WC()->cart->empty_cart(); // Remove cart
 
         return array(
@@ -280,8 +290,12 @@ class Monero_Gateway extends WC_Payment_Gateway
             foreach($price as $currency=>$rate) {
                 // shift decimal eight places for precise int storage
                 $rate = intval($rate * 1e8);
-                $query = $wpdb->prepare("INSERT INTO $table_name (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array($currency, $rate, $rate));
-                $wpdb->query($query);
+                $query = $wpdb->prepare("INSERT INTO `$table_name` (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array( $currency, $rate, $rate));
+                $result = $wpdb->query($query);
+                if(!$result){
+                    self::$log->add('Monero_Payments', "[ERROR] Impossible to write DB. Please check your DB connection or enable Debugging.");
+                }
+                
             }
         }
         else{
@@ -552,7 +566,7 @@ class Monero_Gateway extends WC_Payment_Gateway
             }
 
             $amount_formatted = self::format_monero($amount_due);
-            $qrcode_uri = 'monero:'.$integrated_addr.'?tx_amount='.$amount_formatted.'&tx_payment_id='.$payment_id;
+            $qrcode_uri = 'monero:'.$integrated_address.'?tx_amount='.$amount_formatted.'&tx_payment_id='.$payment_id;
             $my_order_url = wc_get_endpoint_url('view-order', $order_id, wc_get_page_permalink('myaccount'));
 
             $payment_details = array(
@@ -591,26 +605,29 @@ class Monero_Gateway extends WC_Payment_Gateway
         $user = wp_get_current_user();
         if($user === 0)
             self::ajax_output(array('error' => '[ERROR] User not logged in'));
+        
+        if(isset($_GET['order_id'])){
+            $order_id = preg_replace("/[^0-9]+/", "", $_GET['order_id']);
+            $order = wc_get_order($order_id);
+            
+            if($order->get_customer_id() != $user->ID)
+                self::ajax_output(array('error' => '[ERROR] Order does not belong to this user'));
 
-        $order_id = preg_replace("/[^0-9]+/", "", $_GET['order_id']);
-        $order = wc_get_order( $order_id );
-
-        if($order->get_customer_id() != $user->ID)
-            self::ajax_output(array('error' => '[ERROR] Order does not belong to this user'));
-
-        if($order->get_payment_method() != self::$_id)
-            self::ajax_output(array('error' => '[ERROR] Order not paid for with Monero'));
-
-        $details = self::get_payment_details($order);
-        if(!is_array($details))
-            self::ajax_output(array('error' => $details));
-
-        self::ajax_output($details);
-
+            if($order->get_payment_method() != self::$_id)
+                self::ajax_output(array('error' => '[ERROR] Order not paid for with Monero'));
+    
+            $details = self::get_payment_details($order);
+            if(!is_array($details))
+                self::ajax_output(array('error' => $details));
+    
+            self::ajax_output($details);
+        }
     }
     public static function ajax_output($response) {
-        ob_clean();
         header('Content-type: application/json');
+        if (ob_get_length() > 0){
+            ob_clean();
+        }
         echo json_encode($response);
         wp_die();
     }
