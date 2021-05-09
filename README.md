@@ -20,6 +20,12 @@
 
 ## Installing the plugin
 
+### Automatic Method
+
+In the "Add Plugins" section of the WordPress admin UI, search for "monero" and click the Install Now button next to "Monero WooCommerce Extension" by mosu-forge, SerHack.  This will enable auto-updates, but only for official releases, so if you need to work from git master or your local fork, please use the manual method below.
+
+### Manual Method
+
 * Download the plugin from the [releases page](https://github.com/monero-integrations/monerowp) or clone with `git clone https://github.com/monero-integrations/monerowp`
 * Unzip or place the `monero-woocommerce-gateway` folder in the `wp-content/plugins` directory.
 * Activate "Monero Woocommerce Gateway" in your WordPress admin dashboard.
