@@ -1,9 +1,9 @@
 === Monero WooCommerce Extension ===
-Contributors: SerHack, mosu-forge
+Contributors: serhack, mosu-forge and Monero Integrations contributors
 Donate link: http://monerointegrations.com/donate.html
 Tags: monero, woocommerce, integration, payment, merchant, cryptocurrency, accept monero, monero woocommerce
 Requires at least: 4.0
-Tested up to: 5.0.1
+Tested up to: 5.7.2
 Stable tag: trunk
 License: MIT license
 License URI: https://github.com/monero-integrations/monerowp/blob/master/LICENSE
@@ -61,7 +61,7 @@ Once you installed and activated WooCommerce, you may install and activate Moner
 * Bug fixing
 
 = 3.0.0 =
-Huge shoutout to mosu-forge who contributes a lot to make 3.0 possible.
+Huge shoutout to mosu-forge who contributed a lot to make 3.0 possible.
 * Ability to set number of confirms: 0 for zero conf, up to 60.
 * Amount owed in XMR gets locked in after the order for a configurable amount of time after which the order is invalid, default 60 minutes.
 * Shows transactions received along with the number of confirms right on the order success page, auto-updates through AJAX.
@@ -72,6 +72,20 @@ Huge shoutout to mosu-forge who contributes a lot to make 3.0 possible.
 * Live prices are also run via cron, shortcodes for showing exchange rates.
 * Properly hooks into order confirmation email page.
 
+= 3.0.1 =
+* Fixed the incorrect generation of integrated addresses;
+
+= 3.0.2 =
+* Fixed the problem of 'hard-coded' prices which causes a division by zero: now any currencies supported by cryptocompare API should work;
+
+= 3.0.3 =
+* Fixed the problem related to explorer;
+
+= 3.0.4 =
+* Bug fixing;
+
+= 3.0.5 =
+* Removed cryptocompare.com API and switched to CoinGecko
 
 == Upgrade Notice ==
 
@@ -79,15 +93,4 @@ soon
 
 == Frequently Asked Questions ==
 
-* What is Monero ?
-Monero is completely private, cryptographically secure, digital cash used across the globe. See https://getmonero.org for more information
-
-* What is a Monero wallet?
-A Monero wallet is a piece of software that allows you to store your funds and interact with the Monero network. You can get a Monero wallet from https://getmonero.org/downloads
-
-* What is monero-wallet-rpc ?
-The monero-wallet-rpc is an RPC server that will allow this plugin to communicate with the Monero network. You can download it from https://getmonero.org/downloads with the command-line tools.
-
-* Why do I see `[ERROR] Failed to connect to monero-wallet-rpc at localhost port 18080
-Syntax error: Invalid response data structure: Request id: 1 is different from Response id: ` ?
-This is most likely because this plugin can not reach your monero-wallet-rpc. Make sure that you have supplied the correct host IP and port to the plugin in their fields. If your monero-wallet-rpc is on a different server than your wordpress site, make sure that the appropriate port is open with port forwarding enabled.
+soon

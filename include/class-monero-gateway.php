@@ -35,7 +35,7 @@ class Monero_Gateway extends WC_Payment_Gateway
     private static $monero_explorer_tools;
     private static $log;
 
-    private static $currencies = array('BTC','USD','EUR','CAD','INR','GBP','COP','SGD','JPY');
+    private static $currencies = array('AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTC', 'BTN', 'BWP', 'BYN', 'BYR', 'BZD', 'CAD', 'CDF', 'CHF', 'CLF', 'CLP', 'CNY', 'COP', 'CRC', 'CUC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GGP', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'IMP', 'INR', 'IQD', 'IRR', 'ISK', 'JEP', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LTL', 'LVL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRO', 'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'STD', 'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 'VEF', 'VND', 'VUV', 'WST', 'XAF', 'XAG', 'XAU', 'XCD', 'XDR', 'XOF', 'XPF', 'YER', 'ZAR', 'ZMK', 'ZMW', 'ZWL');
     private static $rates = array();
 
     private static $payment_details = array();
@@ -275,7 +275,7 @@ class Monero_Gateway extends WC_Payment_Gateway
 
         // Get Live Price
         $currencies = implode(',', self::$currencies);
-        $api_link = 'https://min-api.cryptocompare.com/data/price?fsym=XMR&tsyms='.$currencies.'&extraParams=monero_woocommerce';
+        $api_link = 'https://api.coingecko.com/api/v3/simple/price?ids=monero&vs_currencies='.$currencies;
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
@@ -285,22 +285,22 @@ class Monero_Gateway extends WC_Payment_Gateway
         curl_close($curl);
         $price = json_decode($resp, true);
 
-        if(!isset($price['Response']) || $price['Response'] != 'Error') {
+        if(isset($price)) {
             $table_name = $wpdb->prefix.'monero_gateway_live_rates';
-            foreach($price as $currency=>$rate) {
+            foreach($price['monero'] as $currency=>$rate) {
                 // shift decimal eight places for precise int storage
                 $rate = intval($rate * 1e8);
-                $query = $wpdb->prepare("INSERT INTO `$table_name` (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array( $currency, $rate, $rate));
+                $query = $wpdb->prepare("INSERT INTO $table_name (currency, rate, updated) VALUES (%s, %d, NOW()) ON DUPLICATE KEY UPDATE rate=%d, updated=NOW()", array($currency, $rate, $rate));
                 $result = $wpdb->query($query);
-                if(!$result){
+              	if(!$result){
                     self::$log->add('Monero_Payments', "[ERROR] Impossible to write DB. Please check your DB connection or enable Debugging.");
                 }
-                
             }
         }
         else{
-             self::$log->add('Monero_Payments', "[ERROR] Unable to fetch prices from cryptocompare.com.");
+             self::$log->add('Monero_Payments', "[ERROR] Unable to fetch prices from coingecko.com.");
         }
+
 
         // Get current network/wallet height
         if(self::$confirm_type == 'monero-wallet-rpc')
