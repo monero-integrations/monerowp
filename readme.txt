@@ -93,4 +93,15 @@ soon
 
 == Frequently Asked Questions ==
 
-soon
+* What is Monero ?
+Monero is completely private, cryptographically secure, digital cash used across the globe. See https://getmonero.org for more information
+
+* What is a Monero wallet?
+A Monero wallet is a piece of software that allows you to store your funds and interact with the Monero network. You can get a Monero wallet from https://getmonero.org/downloads
+
+* What is monero-wallet-rpc ?
+The monero-wallet-rpc is an RPC server that will allow this plugin to communicate with the Monero network. You can download it from https://getmonero.org/downloads with the command-line tools.
+
+* Why do I see `[ERROR] Failed to connect to monero-wallet-rpc at localhost port 18080
+Syntax error: Invalid response data structure: Request id: 1 is different from Response id: ` ?
+This is most likely because this plugin can not reach your monero-wallet-rpc. Make sure that you have supplied the correct host IP and port to the plugin in their fields. If your monero-wallet-rpc is on a different server than your wordpress site, make sure that the appropriate port is open with port forwarding enabled.
