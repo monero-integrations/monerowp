@@ -119,6 +119,7 @@ function monero_init() {
         // This filter will replace all prices with amount in Monero (live rates)
         add_filter('wc_price', 'monero_live_price_format', 10, 3);
         function monero_live_price_format($price_html, $price_float, $args) {
+            $price_float = wc_format_decimal($price_float);
             if(!isset($args['currency']) || !$args['currency']) {
                 global $woocommerce;
                 $currency = strtoupper(get_woocommerce_currency());
