@@ -1,6 +1,6 @@
 <section class="woocommerce-order-details">
     <h2 class="woocommerce-order-details__title"><?php echo $method_title ?></h2>
-    <noscript><h1>You must enable javascript in order to confirm your order</h1></noscript>
+    <noscript><p>Javascript is disabled and some interactive features will not work!</noscript>
 
     <strong id="monero_payment_messages">
 
@@ -22,7 +22,7 @@
         <li>
             Pay to:
             <strong class="monero_details_row">
-                <span class="monero_details_main" id="monero_integrated_address"></span>
+                <span class="monero_details_main" id="monero_integrated_address"><noscript><?php echo $details['integrated_address']; ?></noscript></span>
                 <span class="monero_details_right button-row">
                     <?php if($show_qr): ?>
                     <button href="#" class="button" title="Show QR Code" onclick="monero_showQR()">
@@ -40,7 +40,7 @@
             Total due:
             <strong class="monero_details_row">
                 <span class="monero_details_main">
-                    <span id="monero_total_due"></span> XMR
+                    <span id="monero_total_due"></span><noscript><?php echo $details['amount_due_formatted']; ?></noscript> XMR
                 </span>
                 <span class="monero_details_right button-row">
                     <button href="#" class="button clipboard" title="Copy Amount"
@@ -53,17 +53,17 @@
         <li style="display:none">
             Total order amount:
             <strong>
-                <span id="monero_total_amount"></span> XMR
+                <span id="monero_total_amount"></span><noscript><?php echo $details["amount_total_formatted"]; ?></noscript> XMR
             </strong>
         </li>
         <li>
             Total paid:
             <strong>
-                <span id="monero_total_paid"></span> XMR
+                <span id="monero_total_paid"></span><noscript><?php echo $details["amount_paid_formatted"]; ?></noscript> XMR
             </strong>
         </li>
         <li>
-            Exchange rate:<strong id="monero_exchange_rate"></strong>
+            Exchange rate:<strong id="monero_exchange_rate"><noscript>1 XMR = <?php echo $details["rate_formatted"]; ?></noscript></strong>
         </li>
     </ul>
 
