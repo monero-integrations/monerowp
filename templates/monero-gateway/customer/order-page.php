@@ -1,6 +1,6 @@
 <section class="woocommerce-order-details">
     <h2 class="woocommerce-order-details__title"><?php echo $method_title ?></h2>
-    <noscript><p>Javascript is disabled, please refresh the page to check your order status. Your order will expire in <?php echo $details['order_expires']; ?> if no payment is recieved in that time.</p></noscript>
+    <noscript><p>Javascript is disabled, please refresh the page to check your order status. Your order will expire in <?php echo $details['order_expires']; ?> if no payment is received in that time.</p></noscript>
 
     <strong id="monero_payment_messages">
 
