@@ -146,7 +146,7 @@ HTML;
             echo $item->payment_id;
             break;
         case 'col_txid':
-            $url = MONERO_GATEWAY_EXPLORER_URL.'/tx/'.$item->txid;
+            $url = MONERO_GATEWAY_EXPLORER_URL.'tx/'.$item->txid;
             echo '<a href="'.$url.'" target="_blank">'.$item->txid.'</a>';
             break;
         case 'col_height':
