@@ -132,7 +132,15 @@ HTML;
 
         switch($column_name) {
         case 'col_order_id':
-            echo $this->get_order_link($item->order_id);
+            // try...catch to prevent page breaking on deleted order
+            try {
+                echo $this->get_order_link($item->order_id);
+            }
+            catch(Exception $e) {
+                if ($e->getMessage() === "Invalid order.") {
+                    echo "<p>Order has been deleted.</p>";
+                }
+            }
             break;
         case 'col_payment_id':
             echo $item->payment_id;
