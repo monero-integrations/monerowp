@@ -1,0 +1,43 @@
+{
+    "name": "monero-integrations/monerowp",
+    "repositories": {
+        "outlandish/wpackagist": {
+            "type": "composer",
+            "url": "https://wpackagist.org"
+        },
+        "woocommerce/woocommerce": {
+            "type": "package",
+            "package": {
+                "name": "woocommerce/woocommerce",
+                "type": "package",
+                "version": "trunk",
+                "source": {
+                    "url": "https://github.com/woocommerce/woocommerce.git",
+                    "type": "git",
+                    "reference": "trunk"
+                }
+            }
+        },
+        "wordpress/wordpress": {
+            "type": "git",
+            "url": "https://github.com/WordPress/wordpress-develop"
+        }
+    },
+    "require-dev": {
+        "johnpbloch/wordpress": "*",
+        "woocommerce/woocommerce": "*",
+        "wordpress/wordpress": "*",
+        "wp-cli/dist-archive-command": "dev-main",
+        "wpackagist-plugin/woocommerce": "^8.1",
+        "wpackagist-theme/storefront": "^4.5"
+    },
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        },
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

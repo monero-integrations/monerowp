@@ -1,0 +1,17 @@
+{
+  "name": "monerowp-master",
+  "version": "1.0.0",
+  "description": "## Features",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.38.0",
+    "@types/node": "^20.6.2",
+    "@wordpress/e2e-test-utils-playwright": "^0.9.0",
+    "@wordpress/env": "^8.7.0",
+    "dotenv": "^16.3.1"
+  }
+}
