@@ -1,0 +1,12 @@
+/node_modules
+/test-results
+/tests
+/vendor
+/wordpress
+/wp-content
+/.*
+composer.*
+package*.*
+playwright.config.ts
+README.md
+wp-cli*.*
